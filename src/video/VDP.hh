@@ -346,7 +346,7 @@ public:
 	  * @return True iff even/odd page alternation is enabled.
 	  */
 	inline bool isEvenOddEnabled() const {
-		return (controlRegs[9] & 4) != 0;
+		return (controlRegs[1] & 0x04) ? false : (controlRegs[9] & 4) != 0;
 	}
 
 	/** Is the even or odd field being displayed?
@@ -359,7 +359,7 @@ public:
 	/** Expresses the state of even/odd page interchange in a mask
 	  * on the line number. If even/odd interchange is active, for some
 	  * frames lines 256..511 (page 1) are replaced by 0..255 (page 0)
-	  * and 768..1023 (page 3, if appicable) by 512..767 (page 2).
+	  * and 768..1023 (page 3, if applicable) by 512..767 (page 2).
 	  * Together with the interlace setting this can be used to create
 	  * an interlaced display.
 	  * Even/odd interchange can also happen because of the 'blink'
@@ -370,6 +370,110 @@ public:
 		// TODO: Verify which page is displayed on even fields.
 		return (((~controlRegs[9] & 4) << 6) | ((statusReg2 & 2) << 7)) &
 		       (!blinkState << 8);
+	}
+
+	/** Expresses the state of even/odd page interchange in a mask
+	  * on the line number. If even/odd interchange is active, for some
+	  * frames lines 256..511 (page 1) are replaced by 0..255 (page 0)
+	  * and 768..1023 (page 3, if applicable) by 512..767 (page 2).
+	  * Together with the interlace setting this can be used to create
+	  * an interlaced display.
+	  * Even/odd interchange can also happen because of the 'blink'
+	  * feature in bitmap modes.
+	  * This version allow pulling the Mask Line per line, as it can
+	  * be affected by VDP R#1 third bit, if set, it will switch pages
+	  * not based on VSYNC but on HSYNC, changing page multiple times.
+	  * @return Line number mask that expressed even/odd state.
+	  */
+	inline int getEvenOddMask(int Line) const {
+		// TODO: Verify which page is displayed on even fields.
+		if (controlRegs[1] & 4)
+		{
+			//EO and IL not considered when this bit is set
+			return (!calculateLineBlinkState(Line) << 8);
+		}
+		else
+			return (((~controlRegs[9] & 4) << 6) | ((statusReg2 & 2) << 7)) &
+				(!blinkState << 8);
+	}
+
+	/** Calculates what should be the page used to drawn a given line when R1
+	  * third bit is set. If a RemainingCount variable pointer is passed, also
+	  * tell the state of blink counter on that given line.
+	  * @return whether blinkState was on or off during that line
+	  */
+	inline bool calculateLineBlinkState(int Line, int * RemainingCount = NULL) const {
+		int EvenCounter = (controlRegs[13] >> 4 & 0x0F) * 10;
+		int OddCounter = (controlRegs[13] & 0x0F) * 10;
+		int RemainingLines;		
+
+		if ((EvenCounter == 0) && (OddCounter == 0))
+		{
+			if (RemainingCount)
+				*RemainingCount = 0;
+			return false;
+		}
+
+		if (!blinkState)
+		{			
+			//Ok, so we start counting odd page			
+			if (Line < (OddCounter - blinkPreviousFrameRemainder))
+			{
+				if (RemainingCount)
+					*RemainingCount = blinkPreviousFrameRemainder + Line;
+				// Not enough to change
+				return blinkState;
+			}
+			RemainingLines = Line - (OddCounter - blinkPreviousFrameRemainder);
+			//Ok, this is # of lines after we know blinkState is true / even page
+			if (RemainingLines)
+			{
+				RemainingLines = RemainingLines % (EvenCounter + OddCounter);
+				if (RemainingCount)
+					*RemainingCount = (RemainingLines >= EvenCounter) ? (RemainingLines - EvenCounter) : RemainingLines;
+				//Here Remaining Lines after last time it was true 
+				if ((RemainingLines) && (RemainingLines >= EvenCounter))		
+					return false; //enough lines to flip even counter, so odd page
+				else //not enough lines to flip even counter, so even page
+					return true;
+			}
+			else
+			{
+				if (RemainingCount)
+					*RemainingCount = 0;
+				return true;
+			}
+		}
+		else
+		{
+			//Ok, so we start counting even page
+			if (Line < (EvenCounter - blinkPreviousFrameRemainder))
+			{
+				if (RemainingCount)
+					*RemainingCount = blinkPreviousFrameRemainder + Line;
+				// Not enough to change
+				return blinkState;
+			}
+			RemainingLines = Line - (OddCounter - blinkPreviousFrameRemainder);
+			//Ok, this is # of lines after we know blinkState is false / odd page
+			if (RemainingLines)
+			{
+				RemainingLines = RemainingLines % (EvenCounter + OddCounter);
+				if (RemainingCount)
+					*RemainingCount = (RemainingLines >= OddCounter) ? (RemainingLines - OddCounter) : RemainingLines;
+				//Here Remaining Lines after last time it was false
+				if ((RemainingLines) && (RemainingLines >= OddCounter))
+					return true; //enough lines to flip odd counter, so even page
+				else //not enough lines to flip odd counter, so odd page
+					return false;
+			}
+			else
+			{
+				if (RemainingCount)
+					*RemainingCount = 0;
+				return false;
+			}				
+		}
 	}
 
 	/** Gets the number of VDP clock ticks (21MHz) elapsed between
@@ -689,6 +793,7 @@ private:
 	void execDisplayStart(EmuTime::param time);
 	void execVScan(EmuTime::param time);
 	void execHScan();
+	void execLineScan(EmuTime::param time);
 	void execHorAdjust(EmuTime::param time);
 	void execSetMode(EmuTime::param time);
 	void execSetBlank(EmuTime::param time);
@@ -1039,6 +1144,8 @@ private:
 	  */
 	int blinkCount;
 
+	int blinkPreviousFrameRemainder;
+
 	/** VRAM read/write access pointer.
 	  * Contains the lower 14 bits of the current VRAM access address.
 	  */
@@ -1145,7 +1252,7 @@ private:
 	MSXCPU& cpu;
 	const byte fixedVDPIOdelayCycles;
 };
-SERIALIZE_CLASS_VERSION(VDP, 8);
+SERIALIZE_CLASS_VERSION(VDP, 9);
 
 } // namespace openmsx
 

@@ -163,7 +163,7 @@ VDP::VDP(const DeviceConfig& config)
 		0x03, 0xFB, 0x0F, 0xFF, 0x07, 0x7F, 0x07, 0xFF  // 00..07
 	};
 	static const byte VALUE_MASKS_MSX2[32] = {
-		0x7E, 0x7B, 0x7F, 0xFF, 0x3F, 0xFF, 0x3F, 0xFF, // 00..07
+		0x7E, 0x7F, 0x7F, 0xFF, 0x3F, 0xFF, 0x3F, 0xFF, // 00..07
 		0xFB, 0xBF, 0x07, 0x03, 0xFF, 0xFF, 0x07, 0x0F, // 08..15
 		0x0F, 0xBF, 0xFF, 0xFF, 0x3F, 0x3F, 0x3F, 0xFF, // 16..23
 		0,    0,    0,    0,    0,    0,    0,    0,    // 24..31
@@ -270,6 +270,7 @@ void VDP::resetInit()
 	paletteDataStored = false;
 	blinkState = false;
 	blinkCount = 0;
+	blinkPreviousFrameRemainder = 0;
 	horizontalAdjust = 7;
 
 	// TODO: Real VDP probably resets timing as well.
@@ -341,15 +342,24 @@ void VDP::reset(EmuTime::param time)
 	frameCount = -1;
 	frameStart(time);
 	assert(frameCount == 0);
+	blinkPreviousFrameRemainder = 0;
 }
 
 void VDP::execVSync(EmuTime::param time)
 {
 	// This frame is finished.
 	// Inform VDP subcomponents.
-	// TODO: Do this via VDPVRAM?
+	// TODO: Do this via VDPVRAM?	
 	renderer->frameEnd(time);
 	spriteChecker->frameEnd(time);
+
+	// If Cadari Bit is set
+	if (controlRegs[1] & 0x04)
+	{
+		// need to calculate blinkPreviousFrameRemainder and blinkState
+		blinkState = calculateLineBlinkState(palTiming ? 313 : 262,&blinkPreviousFrameRemainder);
+	}
+	
 	// Start next frame.
 	frameStart(time);
 }
@@ -580,10 +590,10 @@ void VDP::frameStart(EmuTime::param time)
 	// TODO: Interlace is effectuated in border height, according to
 	//       the data book. Exactly when is the fixation point?
 	palTiming = (controlRegs[9] & 0x02) != 0;
-	interlaced = (controlRegs[9] & 0x08) != 0;
+	interlaced = (controlRegs[1] & 0x04) ? false : (controlRegs[9] & 0x08) != 0;
 
-	// Blinking.
-	if (blinkCount != 0) { // counter active?
+	// Blinking.	
+	if ((blinkCount != 0) && ( !(controlRegs[1] & 0x04 ))) { // counter active?
 		blinkCount--;
 		if (blinkCount == 0) {
 			renderer->updateBlinkState(!blinkState, time);
@@ -1001,6 +1011,8 @@ void VDP::changeRegister(byte reg, byte val, EmuTime::param time)
 			// Stable color.
 			blinkCount = 0;
 		}
+		if (controlRegs[1] & 0x04)
+			blinkPreviousFrameRemainder = 0;
 	}
 
 	if (!change) return;
@@ -1765,10 +1777,15 @@ int VDP::MsxX512PosInfo::calc(const EmuTime& time) const
 // version 6: added cpuVramReqAddr to solve too_fast_vram_access issue
 // version 7: removed cpuVramReqAddr again, fixed issue in a different way
 // version 8: removed 'userData' from Schedulable
+// version 9: add blinkPreviousFrameRemainder
 template<typename Archive>
 void VDP::serialize(Archive& ar, unsigned serVersion)
 {
 	ar.template serializeBase<MSXDevice>(*this);
+
+	if (ar.versionAtLeast(serVersion, 9)) {
+		ar.serialize("blinkPreviousFrameRemainder", blinkPreviousFrameRemainder);
+	}
 
 	if (ar.versionAtLeast(serVersion, 8)) {
 		ar.serialize("syncVSync",         syncVSync,
