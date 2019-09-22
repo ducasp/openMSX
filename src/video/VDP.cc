@@ -353,13 +353,12 @@ void VDP::execVSync(EmuTime::param time)
 	renderer->frameEnd(time);
 	spriteChecker->frameEnd(time);
 
-	// If Cadari Bit is set
-	if (controlRegs[1] & 0x04)
-	{
-		// need to calculate blinkPreviousFrameRemainder and blinkState
-		blinkState = calculateLineBlinkState(palTiming ? 313 : 262,&blinkPreviousFrameRemainder);
+	if (isFastBlinkEnabled()) {
+		// adjust blinkState and blinkCount for next frame
+		std::tie(blinkState, blinkCount) =
+			calculateLineBlinkState(getLinesPerFrame());
 	}
-	
+
 	// Start next frame.
 	frameStart(time);
 }
@@ -590,10 +589,10 @@ void VDP::frameStart(EmuTime::param time)
 	// TODO: Interlace is effectuated in border height, according to
 	//       the data book. Exactly when is the fixation point?
 	palTiming = (controlRegs[9] & 0x02) != 0;
-	interlaced = (controlRegs[1] & 0x04) ? false : (controlRegs[9] & 0x08) != 0;
+	interlaced = !isFastBlinkEnabled() && ((controlRegs[9] & 0x08) != 0);
 
-	// Blinking.	
-	if ((blinkCount != 0) && ( !(controlRegs[1] & 0x04 ))) { // counter active?
+	// Blinking.
+	if ((blinkCount != 0) && !isFastBlinkEnabled()) { // counter active?
 		blinkCount--;
 		if (blinkCount == 0) {
 			renderer->updateBlinkState(!blinkState, time);
@@ -1011,8 +1010,10 @@ void VDP::changeRegister(byte reg, byte val, EmuTime::param time)
 			// Stable color.
 			blinkCount = 0;
 		}
-		if (controlRegs[1] & 0x04)
-			blinkPreviousFrameRemainder = 0;
+		// TODO when 'isFastBlinkEnabled()==true' the variables
+		// 'blinkState' and 'blinkCount' represent the values at line 0.
+		// This implementation is not correct for the partial remaining
+		// frame after register 13 got changed.
 	}
 
 	if (!change) return;
