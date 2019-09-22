@@ -270,7 +270,6 @@ void VDP::resetInit()
 	paletteDataStored = false;
 	blinkState = false;
 	blinkCount = 0;
-	blinkPreviousFrameRemainder = 0;
 	horizontalAdjust = 7;
 
 	// TODO: Real VDP probably resets timing as well.
@@ -342,7 +341,6 @@ void VDP::reset(EmuTime::param time)
 	frameCount = -1;
 	frameStart(time);
 	assert(frameCount == 0);
-	blinkPreviousFrameRemainder = 0;
 }
 
 void VDP::execVSync(EmuTime::param time)
@@ -1778,15 +1776,10 @@ int VDP::MsxX512PosInfo::calc(const EmuTime& time) const
 // version 6: added cpuVramReqAddr to solve too_fast_vram_access issue
 // version 7: removed cpuVramReqAddr again, fixed issue in a different way
 // version 8: removed 'userData' from Schedulable
-// version 9: add blinkPreviousFrameRemainder
 template<typename Archive>
 void VDP::serialize(Archive& ar, unsigned serVersion)
 {
 	ar.template serializeBase<MSXDevice>(*this);
-
-	if (ar.versionAtLeast(serVersion, 9)) {
-		ar.serialize("blinkPreviousFrameRemainder", blinkPreviousFrameRemainder);
-	}
 
 	if (ar.versionAtLeast(serVersion, 8)) {
 		ar.serialize("syncVSync",         syncVSync,

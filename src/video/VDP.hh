@@ -1119,8 +1119,6 @@ private:
 	  */
 	int blinkCount;
 
-	int blinkPreviousFrameRemainder;
-
 	/** VRAM read/write access pointer.
 	  * Contains the lower 14 bits of the current VRAM access address.
 	  */
@@ -1227,7 +1225,7 @@ private:
 	MSXCPU& cpu;
 	const byte fixedVDPIOdelayCycles;
 };
-SERIALIZE_CLASS_VERSION(VDP, 9);
+SERIALIZE_CLASS_VERSION(VDP, 8);
 
 } // namespace openmsx
 
