@@ -930,9 +930,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\utils\Base64.cc">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\utils\CRC16.cc">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\utils\Date.cc">
       <Filter>utils</Filter>
     </ClCompile>
@@ -1122,10 +1119,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990DummyRenderer.cc">
       <Filter>video\v9990</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990P1Converter.cc">
-      <Filter>video\v9990</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990P2Converter.cc">
+    <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990PxConverter.cc">
       <Filter>video\v9990</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990PixelRenderer.cc">
@@ -1319,7 +1313,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\input\JoyMega.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\RomDooly.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\sound\ResampledSoundDevice.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\utils\string_view.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\rapidsax.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\GLHQLiteScaler.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\GLHQScaler.cc" />
@@ -2628,10 +2621,7 @@
     <None Include="$(OpenMSXSrcDir)\video\v9990\V9990ModeEnum.hh">
       <Filter>video\v9990</Filter>
     </None>
-    <None Include="$(OpenMSXSrcDir)\video\v9990\V9990P1Converter.hh">
-      <Filter>video\v9990</Filter>
-    </None>
-    <None Include="$(OpenMSXSrcDir)\video\v9990\V9990P2Converter.hh">
+    <None Include="$(OpenMSXSrcDir)\video\v9990\V9990PxConverter.hh">
       <Filter>video\v9990</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\video\v9990\V9990PixelRenderer.hh">
@@ -2823,7 +2813,6 @@
     <None Include="$(OpenMSXSrcDir)\sound\ResampledSoundDevice.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\hash_map.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\hash_set.hh" />
-    <None Include="$(OpenMSXSrcDir)\utils\string_view.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\strCat.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\rapidsax.hh" />
     <None Include="$(OpenMSXSrcDir)\video\scalers\GLHQLiteScaler.hh" />
@@ -2898,6 +2887,7 @@
     <None Include="$(OpenMSXSrcDir)\input\ColecoJoystickIO.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\RomColecoMegaCart.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
   </ItemGroup>
   <ItemGroup>

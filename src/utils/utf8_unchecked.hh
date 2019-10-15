@@ -31,10 +31,9 @@ DEALINGS IN THE SOFTWARE.
 #define UTF8_UNCHECKED_HH
 
 #include "utf8_core.hh"
-#include "string_view.hh"
+#include <string_view>
 
-namespace utf8 {
-namespace unchecked {
+namespace utf8::unchecked {
 
 template <typename octet_iterator>
 octet_iterator append(uint32_t cp, octet_iterator result)
@@ -225,17 +224,17 @@ public:
 };
 
 // convenience functions
-inline size_t size(string_view utf8)
+inline size_t size(std::string_view utf8)
 {
 	return utf8::unchecked::distance(begin(utf8), end(utf8));
 }
-inline string_view substr(string_view utf8, string_view::size_type first = 0,
-                         string_view::size_type len = string_view::npos)
+inline std::string_view substr(std::string_view utf8, std::string_view::size_type first = 0,
+                               std::string_view::size_type len = std::string_view::npos)
 {
 	auto b = begin(utf8);
 	utf8::unchecked::advance(b, first);
-	string_view::const_iterator e;
-	if (len != string_view::npos) {
+	std::string_view::const_iterator e;
+	if (len != std::string_view::npos) {
 		e = b;
 		while (len && (e != end(utf8))) {
 			unchecked::next(e); --len;
@@ -243,10 +242,9 @@ inline string_view substr(string_view utf8, string_view::size_type first = 0,
 	} else {
 		e = end(utf8);
 	}
-	return string_view(b, e);
+	return std::string_view(&*b, e - b);
 }
 
-} // namespace unchecked
-} // namespace utf8
+} // namespace utf8::unchecked
 
 #endif

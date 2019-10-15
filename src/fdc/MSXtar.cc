@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 
 using std::string;
+using std::string_view;
 
 namespace openmsx {
 
@@ -338,7 +339,7 @@ static string makeSimpleMSXFileName(string_view fullFilename)
 	// handle speciale case '.' and '..' first
 	string result(8 + 3, ' ');
 	if ((fullFile == ".") || (fullFile == "..")) {
-		memcpy(&*begin(result), fullFile.data(), fullFile.size()); // c++17: result.data()
+		memcpy(result.data(), fullFile.data(), fullFile.size());
 		return result;
 	}
 
@@ -356,8 +357,8 @@ static string makeSimpleMSXFileName(string_view fullFilename)
 	transform_in_place(extS,  toMSXChr);
 
 	// add correct number of spaces
-	memcpy(&*begin(result) + 0, fileS.data(), fileS.size()); // c++17: result.data()
-	memcpy(&*begin(result) + 8, extS .data(), extS .size());
+	memcpy(result.data() + 0, fileS.data(), fileS.size());
+	memcpy(result.data() + 8, extS .data(), extS .size());
 	return result;
 }
 
@@ -607,7 +608,7 @@ string MSXtar::addFileToDSK(const string& fullHostName, unsigned rootSector)
 string MSXtar::recurseDirFill(string_view dirName, unsigned sector)
 {
 	string messages;
-	ReadDir readDir(dirName.str());
+	ReadDir readDir{string(dirName)};
 	while (dirent* d = readDir.getEntry()) {
 		string name(d->d_name);
 		string fullName = strCat(dirName, '/', name);
@@ -731,7 +732,7 @@ void MSXtar::mkdir(string_view newRootDir)
 
 void MSXtar::chroot(string_view newRootDir, bool createDir)
 {
-	if (newRootDir.starts_with('/') || newRootDir.starts_with('\\')) {
+	if (StringOp::startsWith(newRootDir, '/') || StringOp::startsWith(newRootDir, '\\')) {
 		// absolute path, reset chrootSector
 		chrootSector = rootDirStart;
 		StringOp::trimLeft(newRootDir, "/\\");

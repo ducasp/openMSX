@@ -1,13 +1,12 @@
 #ifndef KEYS_HH
 #define KEYS_HH
 
-#include "string_view.hh"
 #include <SDL_stdinc.h>
 #include <SDL_keycode.h>
 #include <string>
+#include <string_view>
 
-namespace openmsx {
-namespace Keys {
+namespace openmsx::Keys {
 
 /**
  * Constants that identify keys and key modifiers.
@@ -216,7 +215,7 @@ enum KeyCode {
  * Translate key name to key code.
  * Returns K_NONE when the name is unknown.
  */
-KeyCode getCode(string_view name);
+KeyCode getCode(std::string_view name);
 
 KeyCode getCode(SDL_Keycode key, Uint16 mod = KMOD_NONE, SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN, bool release = false);
 
@@ -233,7 +232,6 @@ inline KeyCode combine(KeyCode key, KeyCode modifier) {
 	return static_cast<KeyCode>(int(key) | int(modifier));
 }
 
-} // namespace Keys
-} // namespace openmsx
+} // namespace openmsx::Keys
 
 #endif

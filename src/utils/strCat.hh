@@ -1,12 +1,12 @@
 #ifndef STRCAT_H
 #define STRCAT_H
 
-#include "string_view.hh"
 #include <climits>
 #include <cstring>
 #include <limits>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -154,9 +154,9 @@ struct ConcatUnit : ConcatViaString
 
 // ConcatUnit<string_view>:
 //   store the string view (copies the view, not the string)
-template<> struct ConcatUnit<string_view>
+template<> struct ConcatUnit<std::string_view>
 {
-	ConcatUnit(const string_view v_)
+	ConcatUnit(const std::string_view v_)
 		: v(v_)
 	{
 	}
@@ -174,7 +174,7 @@ template<> struct ConcatUnit<string_view>
 	}
 
 private:
-	string_view v;
+	std::string_view v;
 };
 
 
@@ -429,17 +429,17 @@ inline auto makeConcatUnit(const T& t)
 // Overloads for various cases (strings, integers, floats, ...).
 inline auto makeConcatUnit(const std::string& s)
 {
-	return ConcatUnit<string_view>(s);
+	return ConcatUnit<std::string_view>(s);
 }
 
 inline auto makeConcatUnit(const char* s)
 {
-	return ConcatUnit<string_view>(s);
+	return ConcatUnit<std::string_view>(s);
 }
 
 inline auto makeConcatUnit(char* s)
 {
-	return ConcatUnit<string_view>(s);
+	return ConcatUnit<std::string_view>(s);
 }
 
 // Note: no ConcatIntegral<char> because that is printed as a single character
@@ -533,11 +533,7 @@ inline auto makeConcatUnit(const ConcatSpaces& t)
 template<typename Tuple, size_t... Is>
 size_t calcTotalSizeHelper(const Tuple& t, std::index_sequence<Is...>)
 {
-	// TODO implementation can be simplified by using c++17 fold expressions
-	size_t total = 0;
-	auto l = { ((total += std::get<Is>(t).size()) , 0)... };
-	(void)l;
-	return total;
+	return (... + std::get<Is>(t).size());
 }
 
 template<typename... Ts>
@@ -588,7 +584,7 @@ std::string strCat(Ts&& ...ts)
 	// yet possible. Though see the following proposal (for c++20):
 	//   www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1072r0.html
 	std::string result(size, ' ');
-	char* dst = &result[0]; // C++17 result.data()
+	char* dst = result.data();
 	strCatImpl::copyUnits(dst, t);
 	return result;
 }
@@ -616,7 +612,7 @@ inline std::string strCat(const std::string& x) { return x; }
 inline std::string strCat(std::string&&      x) { return std::move(x); }
 inline std::string strCat(const char*        x) { return std::string(x); }
 inline std::string strCat(char               x) { return std::string(1, x); }
-inline std::string strCat(string_view         x) { return std::string(x.data(), x.size()); }
+inline std::string strCat(std::string_view   x) { return std::string(x.data(), x.size()); }
 
 inline std::string strCat(signed char        x) { return strCatImpl::to_string(x); }
 inline std::string strCat(unsigned char      x) { return strCatImpl::to_string(x); }
@@ -667,7 +663,7 @@ inline void strAppend(std::string& /*x*/)
 // Extra overloads, see strCat().
 inline void strAppend(std::string& x, const std::string& y) { x += y; }
 inline void strAppend(std::string& x, const char*        y) { x += y; }
-inline void strAppend(std::string& x, string_view         y) { x.append(y.data(), y.size()); }
+inline void strAppend(std::string& x, std::string_view   y) { x.append(y.data(), y.size()); }
 
 
 template<size_t N, typename T>
