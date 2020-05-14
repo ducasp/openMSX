@@ -43,14 +43,6 @@ EnumSetting<RenderSettings::RendererID>::Map RenderSettings::getRendererMap()
 	// compiled with OpenGL-2.0, still need to test whether
 	// it's available at run time, but cannot be done here
 	rendererMap.emplace_back("SDLGL-PP", SDLGL_PP);
-	if (!Version::RELEASE) {
-		// disabled for the release:
-		//  these renderers don't offer anything more than the existing
-		//  renderers and sdlgl-fb32 still has endian problems on PPC
-		// TODO is this still true now that SDLGL is removed?
-		append(rendererMap, {{"SDLGL-FB16", SDLGL_FB16},
-		                     {"SDLGL-FB32", SDLGL_FB32}});
-	}
 #endif
 	return rendererMap;
 }
@@ -155,10 +147,24 @@ RenderSettings::RenderSettings(CommandController& commandController)
 	, displayDeformSetting(
 		commandController,
 		"display_deform", "Display deform (for the moment this only "
-		"works with the SDLGL-PP renderer", DEFORM_NORMAL,
+		"works with the SDLGL-PP renderer)", DEFORM_NORMAL,
 		EnumSetting<DisplayDeform>::Map{
 			{"normal", DEFORM_NORMAL},
 			{"3d",     DEFORM_3D}})
+
+	, syncToVBlankModeSetting(
+		commandController,
+		"sync_to_vblank_mode", "Sync-to-VBlank mode (for the moment this only "
+		"works with the SDLGL-PP renderer)\n"
+		"immediate:     no sync to vblank, just render immediately\n"
+		"sync:          sync to vblank always\n"
+		"adaptive:      sync to vblank, but if too late, sync immediately "
+		"(not supported on all systems)",
+		SyncToVBlankMode::IMMEDIATE,
+		EnumSetting<SyncToVBlankMode>::Map{
+			{"immediate", SyncToVBlankMode::IMMEDIATE},
+			{"sync",      SyncToVBlankMode::SYNC},
+			{"adaptive",  SyncToVBlankMode::ADAPTIVE}})
 
 	// Many android devices are relatively low powered. Therefore use
 	// no stretch (value 320) as default for Android because it gives
@@ -266,11 +272,11 @@ float RenderSettings::transformComponent(float c) const
 
 vec3 RenderSettings::transformRGB(vec3 rgb) const
 {
-	vec3 t = colorMatrix * (rgb * contrast + vec3(brightness));
+	auto [r, g, b] = colorMatrix * (rgb * contrast + vec3(brightness));
 	float gamma = 1.0f / getGamma();
-	return {conv2(t[0], gamma),
-	        conv2(t[1], gamma),
-	        conv2(t[2], gamma)};
+	return {conv2(r, gamma),
+	        conv2(g, gamma),
+	        conv2(b, gamma)};
 }
 
 void RenderSettings::parseColorMatrix(Interpreter& interp, const TclObject& value)

@@ -42,7 +42,7 @@ protected:
 	AfterCommand& afterCommand;
 	TclObject command;
 	string id;
-	static unsigned lastAfterId;
+	static inline unsigned lastAfterId = 0;
 };
 
 class AfterTimedCmd : public AfterCmd, private Schedulable
@@ -372,7 +372,7 @@ string AfterCommand::help(const vector<string>& /*tokens*/) const
 void AfterCommand::tabCompletion(vector<string>& tokens) const
 {
 	if (tokens.size() == 2) {
-		static const char* const cmds[] = {
+		static constexpr const char* const cmds[] = {
 			"time", "realtime", "idle", "frame", "break", "boot",
 			"machine_switch", "info", "cancel",
 		};
@@ -454,8 +454,6 @@ int AfterCommand::signalEvent(const std::shared_ptr<const Event>& event)
 
 
 // class AfterCmd
-
-unsigned AfterCmd::lastAfterId = 0;
 
 AfterCmd::AfterCmd(AfterCommand& afterCommand_, const TclObject& command_)
 	: afterCommand(afterCommand_), command(command_)

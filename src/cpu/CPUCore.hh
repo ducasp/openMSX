@@ -79,12 +79,14 @@ public:
 	void wait(EmuTime::param time);
 	EmuTime waitCycles(EmuTime::param time, unsigned cycles);
 	void setNextSyncPoint(EmuTime::param time);
-	void invalidateMemCache(unsigned start, unsigned size);
+	auto getCacheLines() {
+		return std::pair(readCacheLine, writeCacheLine);
+	}
 	bool isM1Cycle(unsigned address) const;
 
 	void disasmCommand(Interpreter& interp,
 	                   span<const TclObject> tokens,
-                           TclObject& result) const;
+	                   TclObject& result) const;
 
 	/**
 	 * Raises the maskable interrupt count.
@@ -130,8 +132,6 @@ private:
 	// memory cache
 	const byte* readCacheLine[CacheLine::NUM];
 	byte* writeCacheLine[CacheLine::NUM];
-	bool readCacheTried [CacheLine::NUM];
-	bool writeCacheTried[CacheLine::NUM];
 
 	MSXMotherBoard& motherboard;
 	Scheduler& scheduler;

@@ -201,35 +201,19 @@ using std::string;
 
 namespace openmsx {
 
-// This actually belongs in Z80.cc and R800.cc (these files don't exist yet).
-// As a quick hack I put these two lines here because I found it overkill to
-// create two files each containing only a single line.
-// Technically these two lines _are_ required according to the c++ standard.
-// Though usually it works just find without them, but during experiments I did
-// get a link error when these lines were missing (it only happened during a
-// debug build with some specific compiler version and only with some
-// combination of other code changes, but again when strictly following the
-// language rules, these lines should be here).
-// ... But visual studio is not fully standard compliant, see also comment
-//     in SectorAccesibleDisk.cc
-#ifndef _MSC_VER
-const int Z80TYPE ::CLOCK_FREQ;
-const int R800TYPE::CLOCK_FREQ;
-#endif
-
 enum Reg8  : int { A, F, B, C, D, E, H, L, IXH, IXL, IYH, IYL, REG_I, REG_R, DUMMY };
 enum Reg16 : int { AF, BC, DE, HL, IX, IY, SP };
 
 // flag positions
-static const byte S_FLAG = 0x80;
-static const byte Z_FLAG = 0x40;
-static const byte Y_FLAG = 0x20;
-static const byte H_FLAG = 0x10;
-static const byte X_FLAG = 0x08;
-static const byte V_FLAG = 0x04;
-static const byte P_FLAG = V_FLAG;
-static const byte N_FLAG = 0x02;
-static const byte C_FLAG = 0x01;
+constexpr byte S_FLAG = 0x80;
+constexpr byte Z_FLAG = 0x40;
+constexpr byte Y_FLAG = 0x20;
+constexpr byte H_FLAG = 0x10;
+constexpr byte X_FLAG = 0x08;
+constexpr byte V_FLAG = 0x04;
+constexpr byte P_FLAG = V_FLAG;
+constexpr byte N_FLAG = 0x02;
+constexpr byte C_FLAG = 0x01;
 
 // flag-register lookup tables
 struct Table {
@@ -240,12 +224,12 @@ struct Table {
 	byte ZSPH [256];
 };
 
-static const byte ZS0     = Z_FLAG;
-static const byte ZSXY0   = Z_FLAG;
-static const byte ZSP0    = Z_FLAG | V_FLAG;
-static const byte ZSPXY0  = Z_FLAG | V_FLAG;
-static const byte ZS255   = S_FLAG;
-static const byte ZSXY255 = S_FLAG | X_FLAG | Y_FLAG;
+constexpr byte ZS0     = Z_FLAG;
+constexpr byte ZSXY0   = Z_FLAG;
+constexpr byte ZSP0    = Z_FLAG | V_FLAG;
+constexpr byte ZSPXY0  = Z_FLAG | V_FLAG;
+constexpr byte ZS255   = S_FLAG;
+constexpr byte ZSXY255 = S_FLAG | X_FLAG | Y_FLAG;
 
 static constexpr Table initTables()
 {
@@ -276,7 +260,7 @@ static constexpr Table initTables()
 	return table;
 }
 
-static constexpr Table table = initTables();
+constexpr Table table = initTables();
 
 // Global variable, because it should be shared between Z80 and R800.
 // It must not be shared between the CPUs of different MSX machines, but
@@ -329,7 +313,7 @@ template<class T> CPUCore<T>::CPUCore(
 	, tracingEnabled(traceSetting.getBoolean())
 	, isTurboR(motherboard.isTurboR())
 {
-	static_assert(!std::is_polymorphic<CPUCore<T>>::value,
+	static_assert(!std::is_polymorphic_v<CPUCore<T>>,
 		"keep CPUCore non-virtual to keep PC at offset 0");
 	doSetFreq();
 	doReset(time);
@@ -344,16 +328,6 @@ template<class T> void CPUCore<T>::warp(EmuTime::param time)
 template<class T> EmuTime::param CPUCore<T>::getCurrentTime() const
 {
 	return T::getTime();
-}
-
-template<class T> void CPUCore<T>::invalidateMemCache(unsigned start, unsigned size)
-{
-	unsigned first = start / CacheLine::SIZE;
-	unsigned num = (size + CacheLine::SIZE - 1) / CacheLine::SIZE;
-	memset(&readCacheLine  [first], 0, num * sizeof(byte*)); // nullptr
-	memset(&writeCacheLine [first], 0, num * sizeof(byte*)); //
-	memset(&readCacheTried [first], 0, num * sizeof(bool));  // FALSE
-	memset(&writeCacheTried[first], 0, num * sizeof(bool));  //
 }
 
 template<class T> void CPUCore<T>::doReset(EmuTime::param time)
@@ -382,7 +356,6 @@ template<class T> void CPUCore<T>::doReset(EmuTime::param time)
 	setR(0x00);
 	T::setMemPtr(0xFFFF);
 	clearPrevious();
-	invalidateMemCache(0x0000, 0x10000);
 
 	// We expect this assert to be valid
 	//   assert(T::getTimeFast() <= time); // time shouldn't go backwards
@@ -600,10 +573,11 @@ template<class T> inline void CPUCore<T>::WRITE_PORT(unsigned port, byte value, 
 template<class T> template<bool PRE_PB, bool POST_PB>
 NEVER_INLINE byte CPUCore<T>::RDMEMslow(unsigned address, unsigned cc)
 {
+	interface->tick(CacheLineCounters::NonCachedRead);
 	// not cached
 	unsigned high = address >> CacheLine::BITS;
-	if (!readCacheTried[high]) {
-		// try to cache now
+        if (readCacheLine[high] == nullptr) {
+		// try to cache now (not a valid entry, and not yet tried)
 		unsigned addrBase = address & CacheLine::HIGH;
 		if (const byte* line = interface->getReadCacheLine(addrBase)) {
 			// cached ok
@@ -614,7 +588,7 @@ NEVER_INLINE byte CPUCore<T>::RDMEMslow(unsigned address, unsigned cc)
 		}
 	}
 	// uncacheable
-	readCacheTried[high] = true;
+	readCacheLine[high] = reinterpret_cast<const byte*>(1);
 	T::template PRE_MEM<PRE_PB, POST_PB>(address);
 	EmuTime time = T::getTimeFast(cc);
 	scheduler.schedule(time);
@@ -626,7 +600,7 @@ template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE byte CPUCore<T>::RDMEM_impl2(unsigned address, unsigned cc)
 {
 	const byte* line = readCacheLine[address >> CacheLine::BITS];
-	if (likely(line != nullptr)) {
+	if (likely(uintptr_t(line) > 1)) {
 		// cached, fast path
 		T::template PRE_MEM<PRE_PB, POST_PB>(address);
 		T::template POST_MEM<       POST_PB>(address);
@@ -638,8 +612,8 @@ ALWAYS_INLINE byte CPUCore<T>::RDMEM_impl2(unsigned address, unsigned cc)
 template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE byte CPUCore<T>::RDMEM_impl(unsigned address, unsigned cc)
 {
-	static const bool PRE  = T::template Normalize<PRE_PB >::value;
-	static const bool POST = T::template Normalize<POST_PB>::value;
+	constexpr bool PRE  = T::template Normalize<PRE_PB >::value;
+	constexpr bool POST = T::template Normalize<POST_PB>::value;
 	return RDMEM_impl2<PRE, POST>(address, cc);
 }
 template<class T> template<unsigned PC_OFFSET> ALWAYS_INLINE byte CPUCore<T>::RDMEM_OPCODE(unsigned cc)
@@ -672,7 +646,7 @@ template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE unsigned CPUCore<T>::RD_WORD_impl2(unsigned address, unsigned cc)
 {
 	const byte* line = readCacheLine[address >> CacheLine::BITS];
-	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && line)) {
+	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && (uintptr_t(line) > 1))) {
 		// fast path: cached and two bytes in same cache line
 		T::template PRE_WORD<PRE_PB, POST_PB>(address);
 		T::template POST_WORD<       POST_PB>(address);
@@ -685,8 +659,8 @@ ALWAYS_INLINE unsigned CPUCore<T>::RD_WORD_impl2(unsigned address, unsigned cc)
 template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE unsigned CPUCore<T>::RD_WORD_impl(unsigned address, unsigned cc)
 {
-	static const bool PRE  = T::template Normalize<PRE_PB >::value;
-	static const bool POST = T::template Normalize<POST_PB>::value;
+	constexpr bool PRE  = T::template Normalize<PRE_PB >::value;
+	constexpr bool POST = T::template Normalize<POST_PB>::value;
 	return RD_WORD_impl2<PRE, POST>(address, cc);
 }
 template<class T> template<unsigned PC_OFFSET> ALWAYS_INLINE unsigned CPUCore<T>::RD_WORD_PC(unsigned cc)
@@ -703,9 +677,10 @@ template<class T> ALWAYS_INLINE unsigned CPUCore<T>::RD_WORD(
 template<class T> template<bool PRE_PB, bool POST_PB>
 NEVER_INLINE void CPUCore<T>::WRMEMslow(unsigned address, byte value, unsigned cc)
 {
+	interface->tick(CacheLineCounters::NonCachedWrite);
 	// not cached
 	unsigned high = address >> CacheLine::BITS;
-	if (!writeCacheTried[high]) {
+	if (writeCacheLine[high] == nullptr) {
 		// try to cache now
 		unsigned addrBase = address & CacheLine::HIGH;
 		if (byte* line = interface->getWriteCacheLine(addrBase)) {
@@ -718,7 +693,7 @@ NEVER_INLINE void CPUCore<T>::WRMEMslow(unsigned address, byte value, unsigned c
 		}
 	}
 	// uncacheable
-	writeCacheTried[high] = true;
+	writeCacheLine[high] = reinterpret_cast<byte*>(1);
 	T::template PRE_MEM<PRE_PB, POST_PB>(address);
 	EmuTime time = T::getTimeFast(cc);
 	scheduler.schedule(time);
@@ -730,7 +705,7 @@ ALWAYS_INLINE void CPUCore<T>::WRMEM_impl2(
 	unsigned address, byte value, unsigned cc)
 {
 	byte* line = writeCacheLine[address >> CacheLine::BITS];
-	if (likely(line != nullptr)) {
+	if (likely(uintptr_t(line) > 1)) {
 		// cached, fast path
 		T::template PRE_MEM<PRE_PB, POST_PB>(address);
 		T::template POST_MEM<       POST_PB>(address);
@@ -743,8 +718,8 @@ template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE void CPUCore<T>::WRMEM_impl(
 	unsigned address, byte value, unsigned cc)
 {
-	static const bool PRE  = T::template Normalize<PRE_PB >::value;
-	static const bool POST = T::template Normalize<POST_PB>::value;
+	constexpr bool PRE  = T::template Normalize<PRE_PB >::value;
+	constexpr bool POST = T::template Normalize<POST_PB>::value;
 	WRMEM_impl2<PRE, POST>(address, value, cc);
 }
 template<class T> ALWAYS_INLINE void CPUCore<T>::WRMEM(
@@ -763,7 +738,7 @@ template<class T> ALWAYS_INLINE void CPUCore<T>::WR_WORD(
 	unsigned address, unsigned value, unsigned cc)
 {
 	byte* line = writeCacheLine[address >> CacheLine::BITS];
-	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && line)) {
+	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && (uintptr_t(line) > 1))) {
 		// fast path: cached and two bytes in same cache line
 		T::template PRE_WORD<true, true>(address);
 		T::template POST_WORD<     true>(address);
@@ -787,7 +762,7 @@ ALWAYS_INLINE void CPUCore<T>::WR_WORD_rev2(
 	unsigned address, unsigned value, unsigned cc)
 {
 	byte* line = writeCacheLine[address >> CacheLine::BITS];
-	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && line)) {
+	if (likely(((address & CacheLine::LOW) != CacheLine::LOW) && (uintptr_t(line) > 1))) {
 		// fast path: cached and two bytes in same cache line
 		T::template PRE_WORD<PRE_PB, POST_PB>(address);
 		T::template POST_WORD<       POST_PB>(address);
@@ -801,8 +776,8 @@ template<class T> template<bool PRE_PB, bool POST_PB>
 ALWAYS_INLINE void CPUCore<T>::WR_WORD_rev(
 	unsigned address, unsigned value, unsigned cc)
 {
-	static const bool PRE  = T::template Normalize<PRE_PB >::value;
-	static const bool POST = T::template Normalize<POST_PB>::value;
+	constexpr bool PRE  = T::template Normalize<PRE_PB >::value;
+	constexpr bool POST = T::template Normalize<POST_PB>::value;
 	WR_WORD_rev2<PRE, POST>(address, value, cc);
 }
 
@@ -913,7 +888,7 @@ void CPUCore<T>::executeInstructions()
 		incR(1); \
 		unsigned address = getPC(); \
 		const byte* line = readCacheLine[address >> CacheLine::BITS]; \
-		if (likely(line != nullptr)) { \
+		if (likely(uintptr_t(line) > 1)) { \
 			T::template PRE_MEM<false, false>(address); \
 			T::template POST_MEM<      false>(address); \
 			byte op = line[address]; \
@@ -4432,10 +4407,6 @@ void CPUCore<T>::serialize(Archive& ar, unsigned version)
 		// CPU is deserialized after devices, so nmiEdge is restored to the
 		// saved version even if IRQHelpers set it on deserialization.
 		ar.serialize("nmiEdge", nmiEdge);
-	}
-
-	if (ar.isLoader()) {
-		invalidateMemCache(0x0000, 0x10000);
 	}
 
 	// Don't serialize:

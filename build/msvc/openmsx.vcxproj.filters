@@ -168,9 +168,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\console\TTFFont.cc">
       <Filter>console</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\BreakPoint.cc">
-      <Filter>cpu</Filter>
-    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\BreakPointBase.cc">
       <Filter>cpu</Filter>
     </ClCompile>
@@ -184,9 +181,6 @@
       <Filter>cpu</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\Dasm.cc">
-      <Filter>cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\DebugCondition.cc">
       <Filter>cpu</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\IRQHelper.cc">
@@ -211,9 +205,6 @@
       <Filter>cpu</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\VDPIODelay.cc">
-      <Filter>cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\WatchPoint.cc">
       <Filter>cpu</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\debugger\DasmTables.cc">
@@ -358,6 +349,9 @@
       <Filter>fdc</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\PhilipsFDC.cc">
+      <Filter>fdc</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\fdc\YamahaFDC.cc">
       <Filter>fdc</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\RamDSKDiskImage.cc">
@@ -580,6 +574,9 @@
       <Filter>memory</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapper.cc">
+      <Filter>memory</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapperBase.cc">
       <Filter>memory</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMirrorDevice.cc">
@@ -915,6 +912,15 @@
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413Okazaki.cc">
       <Filter>sound</Filter>
     </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413NukeYKT.cc">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413OriginalNukeYKT.cc">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\opll.cc">
+      <Filter>sound</Filter>
+    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YMF262.cc">
       <Filter>sound</Filter>
     </ClCompile>
@@ -946,9 +952,6 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\utils\StringOp.cc">
-      <Filter>utils</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\utils\uint128.cc">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\utils\utf8_checked.cc">
@@ -1026,6 +1029,9 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\OutputSurface.cc">
       <Filter>video</Filter>
     </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLOutputSurface.cc">
+      <Filter>video</Filter>
+    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\PixelRenderer.cc">
       <Filter>video</Filter>
     </ClCompile>
@@ -1050,9 +1056,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLOffScreenSurface.cc">
       <Filter>video</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLOutputSurface.cc">
-      <Filter>video</Filter>
-    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLVisibleSurface.cc">
       <Filter>video</Filter>
     </ClCompile>
@@ -1072,6 +1075,9 @@
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLVisibleSurface.cc">
+      <Filter>video</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLVisibleSurfaceBase.cc">
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\SpriteChecker.cc">
@@ -1111,9 +1117,6 @@
       <Filter>video\v9990</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990CmdEngine.cc">
-      <Filter>video\v9990</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990DisplayTiming.cc">
       <Filter>video\v9990</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990DummyRenderer.cc">
@@ -1158,6 +1161,9 @@
     <ClCompile Include="$(OpenMSXSrcDir)\serial\I8254.cc">
       <Filter>serial</Filter>
     </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\serial\JVCMSXMIDI.cc">
+      <Filter>serial</Filter>
+    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MC6850.cc">
       <Filter>serial</Filter>
     </ClCompile>
@@ -1192,6 +1198,9 @@
       <Filter>serial</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MSXMidi.cc">
+      <Filter>serial</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenMSXSrcDir)\serial\MusicModuleMIDI.cc">
       <Filter>serial</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MSXRS232.cc">
@@ -1246,7 +1255,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\DummyPrinterPortDevice.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\DynamicClock.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\EmptyPatch.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\EmuDuration.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\EmuTime.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\FirmwareSwitch.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\GlobalSettings.cc" />
@@ -1691,6 +1699,9 @@
     <None Include="$(OpenMSXSrcDir)\fdc\PhilipsFDC.hh">
       <Filter>fdc</Filter>
     </None>
+    <None Include="$(OpenMSXSrcDir)\fdc\YamahaFDC.hh">
+      <Filter>fdc</Filter>
+    </None>
     <None Include="$(OpenMSXSrcDir)\fdc\RamDSKDiskImage.hh">
       <Filter>fdc</Filter>
     </None>
@@ -1932,6 +1943,9 @@
       <Filter>memory</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapper.hh">
+      <Filter>memory</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapperBase.hh">
       <Filter>memory</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\memory\MSXMirrorDevice.hh">
@@ -2294,6 +2308,18 @@
     <None Include="$(OpenMSXSrcDir)\sound\YM2413Okazaki.hh">
       <Filter>sound</Filter>
     </None>
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413NukeYKT.hh">
+      <Filter>sound</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413NukeYktTables.ii">
+      <Filter>sound</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413OriginalNukeYKT.hh">
+      <Filter>sound</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\sound\opll.hh">
+      <Filter>sound</Filter>
+    </None>
     <None Include="$(OpenMSXSrcDir)\sound\YMF262.hh">
       <Filter>sound</Filter>
     </None>
@@ -2367,6 +2393,9 @@
       <Filter>utils</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\utils\Observer.hh">
+      <Filter>utils</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\utils\one_of.hh">
       <Filter>utils</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\utils\ref.hh">
@@ -2501,6 +2530,9 @@
     <None Include="$(OpenMSXSrcDir)\video\OutputSurface.hh">
       <Filter>video</Filter>
     </None>
+    <None Include="$(OpenMSXSrcDir)\video\SDLOutputSurface.hh">
+      <Filter>video</Filter>
+    </None>
     <None Include="$(OpenMSXSrcDir)\video\PixelOperations.hh">
       <Filter>video</Filter>
     </None>
@@ -2534,9 +2566,6 @@
     <None Include="$(OpenMSXSrcDir)\video\SDLGLOffScreenSurface.hh">
       <Filter>video</Filter>
     </None>
-    <None Include="$(OpenMSXSrcDir)\video\SDLGLOutputSurface.hh">
-      <Filter>video</Filter>
-    </None>
     <None Include="$(OpenMSXSrcDir)\video\SDLGLVisibleSurface.hh">
       <Filter>video</Filter>
     </None>
@@ -2559,6 +2588,9 @@
       <Filter>video</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\video\SDLVisibleSurface.hh">
+      <Filter>video</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\video\SDLVisibleSurfaceBase.hh">
       <Filter>video</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\video\SpriteChecker.hh">
@@ -2657,6 +2689,9 @@
     <None Include="$(OpenMSXSrcDir)\serial\I8254.hh">
       <Filter>serial</Filter>
     </None>
+    <None Include="$(OpenMSXSrcDir)\serial\JVCMSXMIDI.hh">
+      <Filter>serial</Filter>
+    </None>
     <None Include="$(OpenMSXSrcDir)\serial\MC6850.hh">
       <Filter>serial</Filter>
     </None>
@@ -2691,6 +2726,9 @@
       <Filter>serial</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\serial\MSXMidi.hh">
+      <Filter>serial</Filter>
+    </None>
+    <None Include="$(OpenMSXSrcDir)\serial\MusicModuleMIDI.hh">
       <Filter>serial</Filter>
     </None>
     <None Include="$(OpenMSXSrcDir)\serial\MSXRS232.hh">

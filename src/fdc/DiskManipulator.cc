@@ -14,6 +14,7 @@
 #include "SectorBasedDisk.hh"
 #include "StringOp.hh"
 #include "TclObject.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "stl.hh"
 #include "strCat.hh"
@@ -29,12 +30,6 @@ using std::unique_ptr;
 using std::vector;
 
 namespace openmsx {
-
-#ifndef _MSC_EXTENSIONS
-// #ifdef required to avoid link error with vc++, see also
-//   http://www.codeguru.com/forum/showthread.php?t=430949
-const unsigned DiskManipulator::MAX_PARTITIONS;
-#endif
 
 DiskManipulator::DiskManipulator(CommandController& commandController_,
                                  Reactor& reactor_)
@@ -146,14 +141,10 @@ void DiskManipulator::execute(span<const TclObject> tokens, TclObject& result)
 	}
 
 	string_view subcmd = tokens[1].getString();
-	if (((tokens.size() != 4)                     && (subcmd == "savedsk")) ||
-	    ((tokens.size() != 4)                     && (subcmd == "mkdir"))   ||
-	    ((tokens.size() != 3)                     && (subcmd == "dir"))     ||
-	    ((tokens.size() < 3 || tokens.size() > 4) && (subcmd == "format"))  ||
-	    ((tokens.size() < 3 || tokens.size() > 4) && (subcmd == "chdir"))   ||
-	    ((tokens.size() < 4)                      && (subcmd == "export"))  ||
-	    ((tokens.size() < 4)                      && (subcmd == "import"))  ||
-	    ((tokens.size() < 4)                      && (subcmd == "create"))) {
+	if (((tokens.size() != 4)                     && (subcmd == one_of("savedsk", "mkdir"))) ||
+	    ((tokens.size() != 3)                     && (subcmd ==        "dir"             ))  ||
+	    ((tokens.size() < 3 || tokens.size() > 4) && (subcmd == one_of("format", "chdir")))  ||
+	    ((tokens.size() < 4)                      && (subcmd == one_of("export", "import", "create")))) {
 		throw CommandException("Incorrect number of parameters");
 	}
 
@@ -286,7 +277,7 @@ string DiskManipulator::help(const vector<string>& tokens) const
 void DiskManipulator::tabCompletion(vector<string>& tokens) const
 {
 	if (tokens.size() == 2) {
-		static const char* const cmds[] = {
+		static constexpr const char* const cmds[] = {
 			"import", "export", "savedsk", "dir", "create",
 			"format", "chdir", "mkdir",
 		};
@@ -297,7 +288,7 @@ void DiskManipulator::tabCompletion(vector<string>& tokens) const
 
 	} else if (tokens.size() == 3) {
 		vector<string> names;
-		if ((tokens[1] == "format") || (tokens[1] == "create")) {
+		if (tokens[1] == one_of("format", "create")) {
 			names.emplace_back("-dos1");
 		}
 		for (auto& d : drives) {
@@ -321,17 +312,15 @@ void DiskManipulator::tabCompletion(vector<string>& tokens) const
 		completeString(tokens, names);
 
 	} else if (tokens.size() >= 4) {
-		if ((tokens[1] == "savedsk") ||
-		    (tokens[1] == "import")  ||
-		    (tokens[1] == "export")) {
+		if (tokens[1] == one_of("savedsk", "import", "export")) {
 			completeFileName(tokens, userFileContext());
 		} else if (tokens[1] == "create") {
-			static const char* const cmds[] = {
+			static constexpr const char* const cmds[] = {
 				"360", "720", "32M", "-dos1"
 			};
 			completeString(tokens, cmds);
 		} else if (tokens[1] == "format") {
-			static const char* const cmds[] = {
+			static constexpr const char* const cmds[] = {
 				"-dos1"
 			};
 			completeString(tokens, cmds);

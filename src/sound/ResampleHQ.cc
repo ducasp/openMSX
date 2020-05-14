@@ -13,7 +13,6 @@
 #include "ResampledSoundDevice.hh"
 #include "FixedPoint.hh"
 #include "MemBuffer.hh"
-#include "countof.hh"
 #include "likely.hh"
 #include "ranges.hh"
 #include "stl.hh"
@@ -24,6 +23,7 @@
 #include <cstddef>
 #include <cstring>
 #include <cassert>
+#include <iterator>
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif
@@ -33,17 +33,17 @@ namespace openmsx {
 // Note: without appending 'f' to the values in ResampleCoeffs.ii,
 // this will generate thousands of C4305 warnings in VC++
 // E.g. warning C4305: 'initializing' : truncation from 'double' to 'const float'
-static const float coeffs[] = {
+constexpr float coeffs[] = {
 	#include "ResampleCoeffs.ii"
 };
 
 using FilterIndex = FixedPoint<16>;
 
-static const int INDEX_INC = 128;
-static const int COEFF_LEN = countof(coeffs);
-static const int COEFF_HALF_LEN = COEFF_LEN - 1;
-static const unsigned TAB_LEN = 4096;
-static const unsigned HALF_TAB_LEN = TAB_LEN / 2;
+constexpr int INDEX_INC = 128;
+constexpr int COEFF_LEN = std::size(coeffs);
+constexpr int COEFF_HALF_LEN = COEFF_LEN - 1;
+constexpr unsigned TAB_LEN = 4096;
+constexpr unsigned HALF_TAB_LEN = TAB_LEN / 2;
 
 class ResampleCoeffs
 {
@@ -221,9 +221,9 @@ void ResampleCoeffs::releaseCoeffs(double ratio)
 // table tells where in memory the i-th logical row of the original (half)
 // resample coefficient table is physically stored.
 
-static const unsigned N = TAB_LEN;
-static const unsigned N1 = N - 1;
-static const unsigned N2 = N / 2;
+constexpr unsigned N = TAB_LEN;
+constexpr unsigned N1 = N - 1;
+constexpr unsigned N2 = N / 2;
 
 static unsigned mapIdx(unsigned x)
 {
@@ -372,9 +372,8 @@ template <unsigned CHANNELS>
 ResampleHQ<CHANNELS>::ResampleHQ(
 		ResampledSoundDevice& input_,
 		const DynamicClock& hostClock_, unsigned emuSampleRate)
-	: input(input_)
+	: ResampleAlgo(input_)
 	, hostClock(hostClock_)
-	, emuClock(hostClock.getTime(), emuSampleRate)
 	, ratio(float(emuSampleRate) / hostClock.getFreq())
 {
 	ResampleCoeffs::instance().getCoeffs(double(ratio), permute, table, filterLen);
@@ -640,10 +639,11 @@ void ResampleHQ<CHANNELS>::prepareData(unsigned emuNum)
 }
 
 template <unsigned CHANNELS>
-bool ResampleHQ<CHANNELS>::generateOutput(
+bool ResampleHQ<CHANNELS>::generateOutputImpl(
 	float* __restrict dataOut, unsigned hostNum, EmuTime::param time)
 {
-	unsigned emuNum = emuClock.getTicksTill(time);
+	auto& emuClk = getEmuClock();
+	unsigned emuNum = emuClk.getTicksTill(time);
 	if (emuNum > 0) {
 		prepareData(emuNum);
 	}
@@ -652,15 +652,15 @@ bool ResampleHQ<CHANNELS>::generateOutput(
 	if (notMuted) {
 		// main processing loop
 		EmuTime host1 = hostClock.getFastAdd(1);
-		assert(host1 > emuClock.getTime());
-		float pos = emuClock.getTicksTillDouble(host1);
+		assert(host1 > emuClk.getTime());
+		float pos = emuClk.getTicksTillDouble(host1);
 		assert(pos <= (ratio + 2));
 		for (unsigned i = 0; i < hostNum; ++i) {
 			calcOutput(pos, &dataOut[i * CHANNELS]);
 			pos += ratio;
 		}
 	}
-	emuClock += emuNum;
+	emuClk += emuNum;
 	bufStart += emuNum;
 	nonzeroSamples = std::max<int>(0, nonzeroSamples - emuNum);
 

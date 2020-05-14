@@ -3,6 +3,7 @@
 #include "SectorAccessibleDisk.hh"
 #include "serialize.hh"
 #include "serialize_stl.hh"
+#include "one_of.hh"
 #include "unreachable.hh"
 #include <algorithm>
 #include <cassert>
@@ -20,7 +21,7 @@ using std::ios;
 
 namespace openmsx {
 
-static const unsigned SECTOR_SIZE = sizeof(SectorBuffer);
+constexpr unsigned SECTOR_SIZE = sizeof(SectorBuffer);
 
 static void DBERR(const char* message, ...)
 {
@@ -118,7 +119,7 @@ void NowindHost::write(byte data, unsigned time)
 	case STATE_IMAGE:
 		assert(recvCount < 40);
 		extraData[recvCount] = data;
-		if ((data == 0) || (data == ':') ||
+		if (data == one_of(0, ':') ||
 		    (++recvCount == 40)) {
 			char* eData = reinterpret_cast<char*>(extraData);
 			callImage(string(eData, recvCount));
@@ -373,7 +374,7 @@ void NowindHost::doDiskRead1()
 		return;
 	}
 
-	static const unsigned NUMBEROFBLOCKS = 32; // 32 * 64 bytes = 2048 bytes
+	constexpr unsigned NUMBEROFBLOCKS = 32; // 32 * 64 bytes = 2048 bytes
 	transferSize = std::min(bytesLeft, NUMBEROFBLOCKS * 64); // hardcoded in firmware
 
 	unsigned address = getCurrentAddress();
@@ -451,7 +452,7 @@ void NowindHost::transferSectors(unsigned transferAddress, unsigned amount)
 	send(0x07); // used for validation
 }
 
- // sends "02" + "transfer_addr" + "amount" + "data" + "0F 07"
+// sends "02" + "transfer_addr" + "amount" + "data" + "0F 07"
 void NowindHost::transferSectorsBackwards(unsigned transferAddress, unsigned amount)
 {
 	sendHeader();
@@ -502,7 +503,7 @@ void NowindHost::doDiskWrite1()
 		return;
 	}
 
-	static const unsigned BLOCKSIZE = 240;
+	constexpr unsigned BLOCKSIZE = 240;
 	transferSize = std::min(bytesLeft, BLOCKSIZE);
 
 	unsigned address = getCurrentAddress();

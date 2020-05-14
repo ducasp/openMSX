@@ -3,11 +3,10 @@
 #ifndef ZMBVENCODER_HH
 #define ZMBVENCODER_HH
 
+#include "PixelFormat.hh"
 #include "MemBuffer.hh"
 #include <cstdint>
 #include <zlib.h>
-
-struct SDL_PixelFormat;
 
 namespace openmsx {
 
@@ -17,7 +16,7 @@ template<class P> class PixelOperations;
 class ZMBVEncoder
 {
 public:
-	static const char* CODEC_4CC;
+	static constexpr const char CODEC_4CC[5] = "ZMBV"; // 4 + zero-terminator
 
 	ZMBVEncoder(unsigned width, unsigned height, unsigned bpp);
 
@@ -31,15 +30,15 @@ private:
 	};
 
 	void setupBuffers(unsigned bpp);
-	unsigned neededSize();
-	template<class P> void addFullFrame(const SDL_PixelFormat& pixelFormat, unsigned& workUsed);
-	template<class P> void addXorFrame (const SDL_PixelFormat& pixelFormat, unsigned& workUsed);
+	unsigned neededSize() const;
+	template<class P> void addFullFrame(const PixelFormat& pixelFormat, unsigned& workUsed);
+	template<class P> void addXorFrame (const PixelFormat& pixelFormat, unsigned& workUsed);
 	template<class P> unsigned possibleBlock(int vx, int vy, unsigned offset);
 	template<class P> unsigned compareBlock(int vx, int vy, unsigned offset);
 	template<class P> void addXorBlock(
 		const PixelOperations<P>& pixelOps, int vx, int vy,
 		unsigned offset, unsigned& workUsed);
-	const void* getScaledLine(FrameSource* frame, unsigned y, void* workBuf);
+	const void* getScaledLine(FrameSource* frame, unsigned y, void* workBuf) const;
 
 	MemBuffer<uint8_t, SSE2_ALIGNMENT> oldframe;
 	MemBuffer<uint8_t, SSE2_ALIGNMENT> newframe;

@@ -1,5 +1,6 @@
 #include "TclParser.hh"
 #include "ScopedAssign.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "strCat.hh"
 #include "StringOp.hh"
@@ -82,8 +83,8 @@ TclParser::TclParser(Tcl_Interp* interp_, std::string_view input)
 
 void TclParser::parse(const char* p, int size, ParseType type)
 {
-	ScopedAssign<int>    sa1(offset, offset + (p - parseStr.data()));
-	ScopedAssign<string> sa2(parseStr, string(p, size));
+	ScopedAssign<int> sa1(offset, offset + (p - parseStr.data()));
+	ScopedAssign sa2(parseStr, string(p, size));
 	last.push_back(offset);
 
 	// The functions Tcl_ParseCommand() and Tcl_ParseExpr() are meant to
@@ -164,7 +165,7 @@ void TclParser::parse(const char* p, int size, ParseType type)
 void TclParser::printTokens(Tcl_Token* tokens, int numTokens)
 {
 #if DEBUG_TCLPARSER
-	ScopedAssign<int> sa(level, level + 1);
+	ScopedAssign sa(level, level + 1);
 #endif
 	for (int i = 0; i < numTokens; /**/) {
 		Tcl_Token& token = tokens[i];
@@ -216,9 +217,7 @@ TclParser::ParseType TclParser::guessSubType(Tcl_Token* tokens, int i)
 	// heuristic: if previous token is 'if' then assume this is an expression
 	if ((i >= 1) && (tokens[i - 1].type == TCL_TOKEN_TEXT)) {
 		std::string_view prevText(tokens[i - 1].start, tokens[i - 1].size);
-		if ((prevText == "if") ||
-		    (prevText == "elseif") ||
-		    (prevText == "expr")) {
+		if (prevText == one_of("if", "elseif", "expr")) {
 			return EXPRESSION;
 		}
 	}

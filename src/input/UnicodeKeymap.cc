@@ -3,6 +3,7 @@
 #include "File.hh"
 #include "FileContext.hh"
 #include "FileException.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "stl.hh"
 #include "StringOp.hh"
@@ -11,9 +12,6 @@
 using std::string_view;
 
 namespace openmsx {
-
-const unsigned UnicodeKeymap::NUM_DEAD_KEYS;
-
 
 /** Parses the given string reference as a hexadecimal integer.
   * If successful, returns the parsed value and sets "ok" to true.
@@ -49,9 +47,9 @@ static unsigned parseHex(string_view str, bool& ok)
   */
 static inline bool isSep(char c)
 {
-	return c == ','                           // comma
-	    || c == ' ' || c == '\t' || c == '\r' // whitespace
-	    || c == '#';                          // comment
+	return c == one_of(',',             // comma
+	                   ' ', '\t', '\r', // whitespace
+	                   '#');            // comment
 }
 
 /** Removes separator characters at the start of the given string reference.
@@ -153,13 +151,17 @@ void UnicodeKeymap::parseUnicodeKeymapfile(string_view data)
 		} else {
 			bool ok;
 			unicode = parseHex(token, ok);
-			if (!ok || unicode > 0xFFFF) {
+			if (!ok || unicode > 0x1FBAF) {
 				throw MSXException("Wrong unicode value in keymap file");
 			}
 		}
 
 		// Parse second token. It must be <ROW><COL>
 		token = nextToken(data);
+		if (token == "--") {
+			// Skip -- for now, it means the character cannot be typed.
+			continue;
+		}
 		bool ok;
 		unsigned rowcol = parseHex(token, ok);
 		if (!ok || rowcol >= 0x100) {

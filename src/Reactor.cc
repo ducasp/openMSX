@@ -356,7 +356,7 @@ void Reactor::createMachineSetting()
 	EnumSetting<int>::Map machines; // int's are unique dummy values
 	int count = 1;
 	append(machines, view::transform(getHwConfigs("machines"),
-		[&](auto& name) { return std::make_pair(name, count++); }));
+		[&](auto& name) { return std::pair(name, count++); }));
 	machines.emplace_back("C-BIOS_MSX2+", 0); // default machine
 
 	machineSetting = make_unique<EnumSetting<int>>(
@@ -407,7 +407,7 @@ void Reactor::replaceBoard(MSXMotherBoard& oldBoard_, Board newBoard_)
 
 	// Lookup old board (it must be present).
 	auto it = find_if_unguarded(boards,
-		[&](Boards::value_type& b) { return b.get() == &oldBoard_; });
+		[&](auto& b) { return b.get() == &oldBoard_; });
 
 	// If the old board was the active board, then activate the new board
 	if (it->get() == activeBoard) {
@@ -488,7 +488,7 @@ void Reactor::deleteBoard(MSXMotherBoard* board)
 		switchBoard(nullptr);
 	}
 	auto it = rfind_if_unguarded(boards,
-		[&](Boards::value_type& b) { return b.get() == board; });
+		[&](auto& b) { return b.get() == board; });
 	auto board_ = move(*it);
 	move_pop_back(boards, it);
 	// Don't immediately delete old boards because it's possible this
@@ -537,6 +537,14 @@ void Reactor::run(CommandLineParser& parser)
 			                 e.getMessage());
 		}
 	}
+	for (auto& cmd : parser.getStartupCommands()) {
+		try {
+			commandController.executeCommand(cmd);
+		} catch (CommandException& e) {
+			throw FatalError("Couldn't execute command: ", cmd,
+			                 '\n', e.getMessage());
+		}
+	}
 
 	// At this point openmsx is fully started, it's OK now to start
 	// accepting external commands
@@ -555,21 +563,27 @@ void Reactor::run(CommandLineParser& parser)
 		}
 	}
 
-	while (running) {
-		eventDistributor->deliverEvents();
-		assert(garbageBoards.empty());
-		bool blocked = (blockedCounter > 0) || !activeBoard;
-		if (!blocked) blocked = !activeBoard->execute();
-		if (blocked) {
-			// At first sight a better alternative is to use the
-			// SDL_WaitEvent() function. Though when inspecting
-			// the implementation of that function, it turns out
-			// to also use a sleep/poll loop, with even shorter
-			// sleep periods as we use here. Maybe in future
-			// SDL implementations this will be improved.
-			eventDistributor->sleep(20 * 1000);
-		}
+	while (doOneIteration()) {
+		// nothing
 	}
+}
+
+bool Reactor::doOneIteration()
+{
+	eventDistributor->deliverEvents();
+	assert(garbageBoards.empty());
+	bool blocked = (blockedCounter > 0) || !activeBoard;
+	if (!blocked) blocked = !activeBoard->execute();
+	if (blocked) {
+		// At first sight a better alternative is to use the
+		// SDL_WaitEvent() function. Though when inspecting
+		// the implementation of that function, it turns out
+		// to also use a sleep/poll loop, with even shorter
+		// sleep periods as we use here. Maybe in future
+		// SDL implementations this will be improved.
+		eventDistributor->sleep(20 * 1000);
+	}
+	return running;
 }
 
 void Reactor::unpause()
@@ -915,7 +929,7 @@ string StoreMachineCommand::help(const vector<string>& /*tokens*/) const
 	return
 		"store_machine                       Save state of current machine to file \"openmsxNNNN.xml.gz\"\n"
 		"store_machine machineID             Save state of machine \"machineID\" to file \"openmsxNNNN.xml.gz\"\n"
-                "store_machine machineID <filename>  Save state of machine \"machineID\" to indicated file\n"
+		"store_machine machineID <filename>  Save state of machine \"machineID\" to indicated file\n"
 		"\n"
 		"This is a low-level command, the 'savestate' script is easier to use.";
 }

@@ -41,6 +41,7 @@
 #include "serialize.hh"
 #include "serialize_stl.hh"
 #include "ScopedAssign.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "stl.hh"
 #include "unreachable.hh"
@@ -362,7 +363,7 @@ void MSXMotherBoard::removeExtension(const HardwareConfig& extension)
 	extension.testRemove();
 	getMSXCliComm().update(CliComm::EXTENSION, extension.getName(), "remove");
 	auto it = rfind_if_unguarded(extensions,
-		[&](Extensions::value_type& v) { return v.get() == &extension; });
+		[&](auto& e) { return e.get() == &extension; });
 	extensions.erase(it);
 }
 
@@ -430,20 +431,19 @@ JoystickPortIf& MSXMotherBoard::getJoystickPort(unsigned port)
 		// some MSX machines only have 1 instead of 2 joystick ports
 		std::string_view ports = getMachineConfig()->getConfig().getChildData(
 			"JoystickPorts", "AB");
-		if ((ports != "AB") && (!ports.empty()) &&
-		    (ports != "A") && (ports != "B")) {
+		if (ports != one_of("AB", "", "A", "B")) {
 			throw ConfigException(
 				"Invalid JoystickPorts specification, "
 				"should be one of '', 'A', 'B' or 'AB'.");
 		}
 		PluggingController& ctrl = getPluggingController();
-		if ((ports == "AB") || (ports == "A")) {
+		if (ports == one_of("AB", "A")) {
 			joystickPort[0] = make_unique<JoystickPort>(
 				ctrl, "joyporta", "MSX Joystick port A");
 		} else {
 			joystickPort[0] = make_unique<DummyJoystickPort>();
 		}
-		if ((ports == "AB") || (ports == "B")) {
+		if (ports == one_of("AB", "B")) {
 			joystickPort[1] = make_unique<JoystickPort>(
 				ctrl, "joyportb", "MSX Joystick port B");
 		} else {
@@ -510,7 +510,7 @@ void MSXMotherBoard::fastForward(EmuTime::param time, bool fast)
 
 	if (time <= getCurrentTime()) return;
 
-	ScopedAssign<bool> sa(fastForwarding, fast);
+	ScopedAssign sa(fastForwarding, fast);
 	realTime->disable();
 	msxMixer->mute();
 	fastForwardHelper->setTarget(time);

@@ -32,6 +32,7 @@
 #include "CommandException.hh"
 #include "FileContext.hh"
 #include "endian.hh"
+#include "one_of.hh"
 #include "serialize.hh"
 #include <algorithm>
 #include <cstring>
@@ -44,19 +45,19 @@ using std::vector;
 namespace openmsx {
 
 // Medium type (value like LS-120)
-static const byte MT_UNKNOWN   = 0x00;
-static const byte MT_2DD_UN    = 0x10;
-static const byte MT_2DD       = 0x11;
-static const byte MT_2HD_UN    = 0x20;
-static const byte MT_2HD_12_98 = 0x22;
-static const byte MT_2HD_12    = 0x23;
-static const byte MT_2HD_144   = 0x24;
-static const byte MT_LS120     = 0x31;
-static const byte MT_NO_DISK   = 0x70;
-static const byte MT_DOOR_OPEN = 0x71;
-static const byte MT_FMT_ERROR = 0x72;
+constexpr byte MT_UNKNOWN   = 0x00;
+constexpr byte MT_2DD_UN    = 0x10;
+constexpr byte MT_2DD       = 0x11;
+constexpr byte MT_2HD_UN    = 0x20;
+constexpr byte MT_2HD_12_98 = 0x22;
+constexpr byte MT_2HD_12    = 0x23;
+constexpr byte MT_2HD_144   = 0x24;
+constexpr byte MT_LS120     = 0x31;
+constexpr byte MT_NO_DISK   = 0x70;
+constexpr byte MT_DOOR_OPEN = 0x71;
+constexpr byte MT_FMT_ERROR = 0x72;
 
-static const byte inqdata[36] = {
+constexpr byte inqdata[36] = {
 	  0,   // bit5-0 device type code.
 	  0,   // bit7 = 1 removable device
 	  2,   // bit7,6 ISO version. bit5,4,3 ECMA version.
@@ -74,10 +75,10 @@ static const byte inqdata[36] = {
 };
 
 // for FDSFORM.COM
-static const char fds120[28 + 1]  = "IODATA  LS-120 COSM     0001";
+constexpr char fds120[28 + 1]  = "IODATA  LS-120 COSM     0001";
 
-static const unsigned BUFFER_BLOCK_SIZE = SCSIDevice::BUFFER_SIZE /
-                                          SectorAccessibleDisk::SECTOR_SIZE;
+constexpr unsigned BUFFER_BLOCK_SIZE = SCSIDevice::BUFFER_SIZE /
+                                       SectorAccessibleDisk::SECTOR_SIZE;
 
 class LSXCommand final : public RecordedCommand
 {
@@ -496,7 +497,7 @@ unsigned SCSILS120::executeCmd(const byte* cdb_, SCSI::Phase& phase, unsigned& b
 
 	// check unit attention
 	if (unitAttention && (mode & MODE_UNITATTENTION) &&
-	    (cdb[0] != SCSI::OP_INQUIRY) && (cdb[0] != SCSI::OP_REQUEST_SENSE)) {
+	    (cdb[0] != one_of(SCSI::OP_INQUIRY, SCSI::OP_REQUEST_SENSE))) {
 		unitAttention = false;
 		keycode = SCSI::SENSE_POWER_ON;
 		if (cdb[0] == SCSI::OP_TEST_UNIT_READY) {
@@ -681,7 +682,7 @@ int SCSILS120::msgOut(byte value)
 
 	case SCSI::MSG_BUS_DEVICE_RESET:
 		busReset();
-		// fall-through
+		[[fallthrough]];
 	case SCSI::MSG_ABORT:
 		return -1;
 
@@ -769,8 +770,7 @@ void LSXCommand::execute(span<const TclObject> tokens, TclObject& result,
 		result.addListElement(ls.name + ':',
 		                      file.is_open() ? file.getURL() : string{});
 		if (!file.is_open()) result.addListElement("empty");
-	} else if ((tokens.size() == 2) &&
-	           ((tokens[1] == "eject") || (tokens[1] == "-eject"))) {
+	} else if ((tokens.size() == 2) && (tokens[1] == one_of("eject", "-eject"))) {
 		ls.eject();
 		// TODO check for locked tray
 		if (tokens[1] == "-eject") {
@@ -813,7 +813,7 @@ string LSXCommand::help(const vector<string>& /*tokens*/) const
 
 void LSXCommand::tabCompletion(vector<string>& tokens) const
 {
-	static const char* const extra[] = { "eject", "insert" };
+	static constexpr const char* const extra[] = { "eject", "insert" };
 	completeFileName(tokens, userFileContext(), extra);
 }
 

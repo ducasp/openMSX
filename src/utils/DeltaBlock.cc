@@ -93,7 +93,7 @@ static std::pair<const uint8_t*, const uint8_t*> scan_mismatch(
 	// bytes. This routine also benefits from AVX2 instructions. Though not
 	// all x86_64 CPUs have AVX2 (all have SSE2), so using them requires
 	// extra run-time checks and that's not worth it at this point.
-	static const int WORD_SIZE =
+	constexpr int WORD_SIZE =
 #ifdef __SSE2__
 		sizeof(__m128i);
 #else
@@ -241,8 +241,6 @@ static void applyDeltaInPlace(uint8_t* buf, size_t size, const uint8_t* delta)
 
 // class DeltaBlock
 
-size_t DeltaBlock::globalAllocSize = 0;
-
 DeltaBlock::~DeltaBlock()
 {
 	globalAllocSize -= allocSize;
@@ -363,9 +361,9 @@ size_t DeltaBlockDiff::getDeltaSize() const
 std::shared_ptr<DeltaBlock> LastDeltaBlocks::createNew(
 		const void* id, const uint8_t* data, size_t size)
 {
-	auto it = ranges::lower_bound(infos, std::make_tuple(id, size),
+	auto it = ranges::lower_bound(infos, std::tuple(id, size),
 		[](const Info& info, const std::tuple<const void*, size_t>& info2) {
-			return std::make_tuple(info.id, info.size) < info2; });
+			return std::tuple(info.id, info.size) < info2; });
 	if ((it == end(infos)) || (it->id != id) || (it->size != size)) {
 		// no previous info yet
 		it = infos.emplace(it, id, size);

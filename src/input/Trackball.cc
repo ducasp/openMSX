@@ -56,7 +56,7 @@ Trackball::Trackball(MSXEventDistributor& eventDistributor_,
                      StateChangeDistributor& stateChangeDistributor_)
 	: eventDistributor(eventDistributor_)
 	, stateChangeDistributor(stateChangeDistributor_)
-	, lastSync(EmuTime::zero)
+	, lastSync(EmuTime::zero())
 	, targetDeltaX(0), targetDeltaY(0)
 	, currentDeltaX(0), currentDeltaY(0)
 	, lastValue(0)
@@ -186,7 +186,7 @@ void Trackball::syncCurrentWithTarget(EmuTime::param time)
 		return;
 	}
 
-	static const EmuDuration INTERVAL = EmuDuration::msec(1);
+	static constexpr auto INTERVAL = EmuDuration::msec(1);
 
 	int maxSteps = (time - lastSync) / INTERVAL;
 	lastSync += INTERVAL * maxSteps;
@@ -210,7 +210,7 @@ void Trackball::signalMSXEvent(const shared_ptr<const Event>& event,
 	switch (event->getType()) {
 	case OPENMSX_MOUSE_MOTION_EVENT: {
 		auto& mev = checked_cast<const MouseMotionEvent&>(*event);
-		static const int SCALE = 2;
+		constexpr int SCALE = 2;
 		int dx = mev.getX() / SCALE;
 		int dy = mev.getY() / SCALE;
 		if ((dx != 0) || (dy != 0)) {

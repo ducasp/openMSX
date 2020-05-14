@@ -18,6 +18,7 @@
 #include "StringOp.hh"
 #include "view.hh"
 #include "xrange.hh"
+#include "build-info.hh"
 #include <cassert>
 #include <memory>
 
@@ -282,7 +283,7 @@ string GlobalCommandController::addEscaping(const string& str, bool quote,
 	}
 	string result = escapeChars(str, "$[]");
 	if (quote) {
-                result.insert(result.begin(), '"');
+		result.insert(result.begin(), '"');
 		if (finished) {
 			result += '"';
 		}
@@ -300,7 +301,7 @@ bool GlobalCommandController::isComplete(const string& command)
 TclObject GlobalCommandController::executeCommand(
 	const string& command, CliConnection* connection_)
 {
-	ScopedAssign<CliConnection*> sa(connection, connection_);
+	ScopedAssign sa(connection, connection_);
 	return interpreter.execute(command);
 }
 
@@ -446,8 +447,12 @@ void GlobalCommandController::HelpCmd::execute(
 		string text =
 			"Use 'help [command]' to get help for a specific command\n"
 			"The following commands exist:\n";
-		auto cmds = to_vector<string_view>(
-			view::keys(controller.commandCompleters));
+		auto cmds = concat<string_view>(
+			view::keys(controller.commandCompleters),
+			getInterpreter().execute("openmsx::all_command_names_with_help"));
+		cmds.erase(ranges::remove_if(cmds, [](const auto& c) {
+		                   return c.find("::") != std::string_view::npos; }),
+		           cmds.end());
 		ranges::sort(cmds);
 		for (auto& line : formatListInColumns(cmds)) {
 			strAppend(text, line, '\n');
@@ -543,7 +548,7 @@ CliConnection& GlobalCommandController::UpdateCmd::getConnection()
 void GlobalCommandController::UpdateCmd::execute(
 	span<const TclObject> tokens, TclObject& /*result*/)
 {
-	checkNumArgs(tokens, 3, "enable|disable type");
+	checkNumArgs(tokens, 3, Prefix{1}, "enable|disable type");
 	if (tokens[1] == "enable") {
 		getConnection().setUpdateEnable(getType(tokens[2]), true);
 	} else if (tokens[1] == "disable") {
@@ -563,7 +568,7 @@ void GlobalCommandController::UpdateCmd::tabCompletion(vector<string>& tokens) c
 {
 	switch (tokens.size()) {
 	case 2: {
-		static const char* const ops[] = { "enable", "disable" };
+		static constexpr const char* const ops[] = { "enable", "disable" };
 		completeString(tokens, ops);
 		break;
 	}

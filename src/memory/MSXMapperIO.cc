@@ -67,10 +67,11 @@ byte MSXMapperIO::peekIO(word port, EmuTime::param time) const
 
 void MSXMapperIO::writeIO(word port, byte value, EmuTime::param time)
 {
+	// Note: the mappers are responsible for invalidating/filling the CPU
+	// cache-lines.
 	for (auto* mapper : mappers) {
 		mapper->writeIO(port, value, time);
 	}
-	invalidateMemCache(0x4000 * (port & 0x03), 0x4000);
 }
 
 

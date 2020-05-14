@@ -18,6 +18,7 @@
 #include "serialize.hh"
 #include "cstd.hh"
 #include "likely.hh"
+#include "one_of.hh"
 #include "outer.hh"
 #include "random.hh"
 #include <cassert>
@@ -31,11 +32,11 @@ namespace openmsx {
 // The step clock for the tone and noise generators is the chip clock
 // divided by 8; for the envelope generator of the AY-3-8910, it is half
 // that much (clock/16).
-static const float NATIVE_FREQ_FLOAT = (3579545.0f / 2) / 8;
-static const int NATIVE_FREQ_INT = lrintf(NATIVE_FREQ_FLOAT);
+constexpr float NATIVE_FREQ_FLOAT = (3579545.0f / 2) / 8;
+constexpr int NATIVE_FREQ_INT = int(cstd::round(NATIVE_FREQ_FLOAT));
 
-static const int PORT_A_DIRECTION = 0x40;
-static const int PORT_B_DIRECTION = 0x80;
+constexpr int PORT_A_DIRECTION = 0x40;
+constexpr int PORT_B_DIRECTION = 0x80;
 
 enum Register {
 	AY_AFINE = 0, AY_ACOARSE = 1, AY_BFINE = 2, AY_BCOARSE = 3,
@@ -80,7 +81,7 @@ static constexpr AY8910Tables calcTables()
 
 	return tables;
 }
-static constexpr AY8910Tables tables = calcTables();
+constexpr AY8910Tables tables = calcTables();
 
 
 // Perlin noise
@@ -106,15 +107,7 @@ static float noiseValue(float x)
 	int xi = int(x);
 	float xf = x - xi;
 	xi &= 255;
-	float n0 = noiseTab[xi + 0];
-	float n1 = noiseTab[xi + 1];
-	float n2 = noiseTab[xi + 2];
-	float n3 = noiseTab[xi + 3];
-	float a = n3 - n2 + n1 - n0;
-	float b = n0 - n1 - a;
-	float c = n2 - n0;
-	float d = n1;
-	return ((a * xf + b) * xf + c) * xf + d;
+	return Math::cubicHermite(&noiseTab[xi + 1], xf);
 }
 
 
@@ -564,7 +557,7 @@ byte AY8910::readRegister(unsigned reg, EmuTime::param time)
 	}
 
 	// TODO some AY8910 models have 1F as mask for registers 1, 3, 5
-	static const byte regMask[16] = {
+	static constexpr byte regMask[16] = {
 		0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
 		0x1f, 0x1f ,0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
 	};
@@ -629,8 +622,15 @@ void AY8910::wrtReg(unsigned reg, byte value, EmuTime::param time)
 		tone[reg / 2].setPeriod(regs[reg & ~1] + 256 * (regs[reg | 1] & 0x0F));
 		break;
 	case AY_NOISEPER:
-		// half the frequency of tone generation
-		noise.setPeriod(2 * (value & 0x1F));
+		// Half the frequency of tone generation.
+		//
+		// Verified on turboR GT: value=0 and value=1 sound the same.
+		//
+		// Likely in real AY8910 this is implemented by driving the
+		// noise generator at halve the frequency instead of
+		// multiplying the value by 2 (hence the correction for value=0
+		// here). But the effect is the same(?).
+		noise.setPeriod(2 * std::max(1, value & 0x1F));
 		break;
 	case AY_AVOL:
 	case AY_BVOL:
@@ -974,8 +974,7 @@ float AY8910::getAmplificationFactorImpl() const
 
 void AY8910::update(const Setting& setting)
 {
-	if ((&setting == &vibratoPercent) ||
-	    (&setting == &detunePercent)) {
+	if (&setting == one_of(&vibratoPercent, &detunePercent)) {
 		doDetune = (vibratoPercent.getDouble() != 0) ||
 			   (detunePercent .getDouble() != 0);
 		if (doDetune && !detuneInitialized) {

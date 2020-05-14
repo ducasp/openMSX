@@ -10,7 +10,7 @@ using openmsx::MemBuffer;
 
 static inline char encode(uint8_t c)
 {
-	static const char* const base64_chars =
+	static constexpr const char* const base64_chars =
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"abcdefghijklmnopqrstuvwxyz"
 		"0123456789+/";
@@ -37,9 +37,9 @@ static inline uint8_t decode(uint8_t c)
 
 string encode(const uint8_t* input, size_t inSize)
 {
-	static const int CHUNKS = 19;
-	static const int IN_CHUNKS  = 3 * CHUNKS;
-	static const int OUT_CHUNKS = 4 * CHUNKS; // 76 chars per line
+	constexpr int CHUNKS = 19;
+	constexpr int IN_CHUNKS  = 3 * CHUNKS;
+	constexpr int OUT_CHUNKS = 4 * CHUNKS; // 76 chars per line
 
 	auto outSize = ((inSize + (IN_CHUNKS - 1)) / IN_CHUNKS) * (OUT_CHUNKS + 1); // overestimation
 	string ret(outSize, 0); // too big
@@ -119,7 +119,7 @@ std::pair<MemBuffer<uint8_t>, size_t> decode(std::string_view input)
 
 	assert(outSize >= out);
 	ret.resize(out); // shrink to correct size
-	return std::make_pair(std::move(ret), out);
+	return std::pair(std::move(ret), out);
 }
 
 bool decode_inplace(std::string_view input, uint8_t* output, size_t outSize)

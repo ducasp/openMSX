@@ -10,7 +10,7 @@ SaveStateCLI::SaveStateCLI(CommandLineParser& parser_)
 	: parser(parser_)
 {
 	parser.registerOption("-savestate", *this);
-	parser.registerFileType("oms", *this);
+	parser.registerFileType({"oms"}, *this);
 }
 
 void SaveStateCLI::parseOption(const string& option, span<string>& cmdLine)
@@ -48,6 +48,11 @@ void SaveStateCLI::parseFileType(const string& filename,
 std::string_view SaveStateCLI::fileTypeHelp() const
 {
 	return "openMSX savestate";
+}
+
+std::string_view SaveStateCLI::fileTypeCategoryName() const
+{
+	return "savestate";
 }
 
 } // namespace openmsx

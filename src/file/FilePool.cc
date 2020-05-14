@@ -12,6 +12,7 @@
 #include "CliComm.hh"
 #include "Reactor.hh"
 #include "Timer.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "sha1.hh"
 #include <fstream>
@@ -197,7 +198,7 @@ void FilePool::readSha1sums()
 		}
 
 		data = std::find_if(it + 1, data_end, [](char c) {
-			return !(c == '\n' || c == '\r');
+			return c != one_of('\n', '\r');
 		});
 	}
 
@@ -332,14 +333,14 @@ static void reportProgress(const string& filename, size_t percentage,
 {
 	reactor.getCliComm().printProgress(
 		"Calculating SHA1 sum for ", filename, "... ", percentage, '%');
-	reactor.getDisplay().repaint();
+	reactor.getDisplay().repaintDelayed(0);
 }
 
 static Sha1Sum calcSha1sum(File& file, Reactor& reactor)
 {
 	// Calculate sha1 in several steps so that we can show progress
 	// information. We take a fixed step size for an efficient calculation.
-	static const size_t STEP_SIZE = 1024 * 1024; // 1MB
+	constexpr size_t STEP_SIZE = 1024 * 1024; // 1MB
 
 	auto data = file.mmap();
 	string filename = file.getOriginalName();
@@ -365,7 +366,9 @@ static Sha1Sum calcSha1sum(File& file, Reactor& reactor)
 		}
 	}
 	// last block
-	sha1.update(&data[done], remaining);
+	if (remaining) {
+		sha1.update(&data[done], remaining);
+	}
 	if (everShowedProgress) {
 		reportProgress(filename, 100, reactor);
 	}
@@ -443,7 +446,7 @@ File FilePool::scanDirectory(
 			if (FileOperations::isRegularFile(st)) {
 				result = scanFile(sha1sum, path, st, poolPath, progress);
 			} else if (FileOperations::isDirectory(st)) {
-				if ((file != ".") && (file != "..")) {
+				if (file != one_of(".", "..")) {
 					result = scanDirectory(sha1sum, path, poolPath, progress);
 				}
 			}
@@ -463,11 +466,11 @@ File FilePool::scanFile(const Sha1Sum& sha1sum, const string& filename,
 	if (now > (progress.lastTime + 250000)) { // 4Hz
 		progress.lastTime = now;
 		reactor.getCliComm().printProgress(
-                        "Searching for file with sha1sum ",
+			"Searching for file with sha1sum ",
 			sha1sum.toString(), "...\nIndexing filepool ", poolPath,
 			": [", progress.amountScanned, "]: ",
 			std::string_view(filename).substr(poolPath.size()));
-		reactor.getDisplay().repaint();
+		reactor.getDisplay().repaintDelayed(0);
 	}
 
 	// Note: do NOT call 'reactor.getEventDistributor().deliverEvents()'.

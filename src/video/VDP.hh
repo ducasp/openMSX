@@ -64,12 +64,12 @@ class VDP final : public MSXDevice, private VideoSystemChangeListener
 public:
 	/** Number of VDP clock ticks per second.
 	  */
-	static const int TICKS_PER_SECOND = 3579545 * 6; // 21.5MHz;
+	static constexpr int TICKS_PER_SECOND = 3579545 * 6; // 21.5MHz;
 	using VDPClock = Clock<TICKS_PER_SECOND>;
 
 	/** Number of VDP clock ticks per line.
 	  */
-	static const int TICKS_PER_LINE = 1368;
+	static constexpr int TICKS_PER_LINE = 1368;
 
 	explicit VDP(const DeviceConfig& config);
 	~VDP() override;
@@ -173,6 +173,17 @@ public:
 	  */
 	inline bool getTransparency() const {
 		return (controlRegs[8] & 0x20) == 0;
+	}
+
+	/** Can a sprite which has color=0 collide with some other sprite?
+	 */
+	bool canSpriteColor0Collide() const {
+		// On MSX1 (so far only tested a TMS9129(?)) sprites with
+		// color=0 can always collide with other sprites. Though on
+		// V99x8 (only tested V9958) collisions only occur when color 0
+		// is not transparent. For more details see:
+		//   https://github.com/openMSX/openMSX/issues/1198
+		return isMSX1VDP() || !getTransparency();
 	}
 
 	/** Gets the current foreground color.
@@ -399,7 +410,7 @@ public:
 		if (isFastBlinkEnabled()) {
 			// EO and IL not considered in this mode
 			auto p = calculateLineBlinkState(line);
-			return (p.first) << 8;
+			return (!p.first) << 8;
 		} else {
 			return getEvenOddMask();
 		}
@@ -639,13 +650,14 @@ private:
 	void initTables();
 
 	// VdpVersion bitmasks
-	static const unsigned VM_MSX1             =  1; // set-> MSX1,       unset-> MSX2 or MSX2+
-	static const unsigned VM_PAL              =  2; // set-> fixed PAL,  unset-> fixed NTSC or switchable
-	static const unsigned VM_NO_MIRRORING     =  4; // set-> no (screen2) mirroring
-	static const unsigned VM_PALCOL_MIRRORING =  8; // set-> pattern/color-table mirroring
-	static const unsigned VM_VRAM_REMAPPING   = 16; // set-> 4k,8/16k VRAM remapping
-	static const unsigned VM_TOSHIBA_PALETTE  = 32; // set-> has Toshiba palette
-	static const unsigned VM_YJK              = 64; // set-> has YJK (MSX2+)
+	static constexpr unsigned VM_MSX1             =   1; // set-> MSX1,       unset-> MSX2 or MSX2+
+	static constexpr unsigned VM_PAL              =   2; // set-> fixed PAL,  unset-> fixed NTSC or switchable
+	static constexpr unsigned VM_NO_MIRRORING     =   4; // set-> no (screen2) mirroring
+	static constexpr unsigned VM_PALCOL_MIRRORING =   8; // set-> pattern/color-table mirroring
+	static constexpr unsigned VM_VRAM_REMAPPING   =  16; // set-> 4k,8/16k VRAM remapping
+	static constexpr unsigned VM_TOSHIBA_PALETTE  =  32; // set-> has Toshiba palette
+	static constexpr unsigned VM_YJK              =  64; // set-> has YJK (MSX2+)
+	static constexpr unsigned VM_YM2220_PALETTE   = 128; // set-> has YM2220 palette
 
 	/** VDP version: the VDP model being emulated. */
 	enum VdpVersion {
@@ -675,6 +687,12 @@ private:
 
 		/** VDP in Toshiba T7937A engine (hardwired as NTSC). */
 		T7937ANTSC = VM_MSX1 | VM_TOSHIBA_PALETTE,
+
+		/** Yamaha clone (hardwired as PAL). */
+		YM2220PAL  = VM_MSX1 | VM_YM2220_PALETTE | VM_PALCOL_MIRRORING | VM_PAL,
+
+		/** Yamaha clone (hardwired as NTSC). */
+		YM2220NTSC = VM_MSX1 | VM_YM2220_PALETTE | VM_PALCOL_MIRRORING,
 
 		/** MSX2 VDP. */
 		V9938      = 0,
@@ -804,11 +822,11 @@ private:
 		/** Length of horizontal blank (HR=1) in text mode, measured in VDP
 		  * ticks.
 		  */
-		static const int HBLANK_LEN_TXT = 404;
+		static constexpr int HBLANK_LEN_TXT = 404;
 		/** Length of horizontal blank (HR=1) in graphics mode, measured in VDP
 		  * ticks.
 		  */
-		static const int HBLANK_LEN_GFX = 312;
+		static constexpr int HBLANK_LEN_GFX = 312;
 		return
 			( ticksThisFrame + TICKS_PER_LINE - getRightBorder()
 				) % TICKS_PER_LINE

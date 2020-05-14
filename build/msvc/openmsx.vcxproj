@@ -348,13 +348,11 @@
     <ClCompile Include="$(OpenMSXSrcDir)\console\OSDTopWidget.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\console\OSDWidget.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\console\TTFFont.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\BreakPoint.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\BreakPointBase.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\CPURegs.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\CPUClock.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\CPUCore.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\Dasm.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\DebugCondition.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\IRQHelper.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\MSXCPU.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\MSXCPUInterface.cc" />
@@ -363,7 +361,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\MSXMultiMemDevice.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\MSXWatchIODevice.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\cpu\VDPIODelay.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\cpu\WatchPoint.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\debugger\DasmTables.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\debugger\Debugger.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\debugger\Probe.cc" />
@@ -417,6 +414,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\NowindInterface.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\NowindRomDisk.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\PhilipsFDC.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\fdc\YamahaFDC.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\RamDSKDiskImage.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\RealDrive.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\fdc\SectorAccessibleDisk.cc" />
@@ -497,6 +495,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMapperIO.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMegaRam.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapper.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapperBase.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXMirrorDevice.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXPac.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\memory\MSXRam.cc" />
@@ -623,6 +622,9 @@
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413Burczynski.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413Okazaki.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413NukeYKT.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\YM2413OriginalNukeYKT.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\sound\opll.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YMF262.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\sound\YMF278.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\thread\Thread.cc" />
@@ -640,7 +642,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\utils\sha1.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\StringOp.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\rapidsax.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\utils\uint128.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\utf8_checked.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\win32-arggen.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\win32-dirent.cc" />
@@ -686,6 +687,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\GLContext.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\Multiply32.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\OutputSurface.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLOutputSurface.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\PixelRenderer.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\PNG.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\PostProcessor.cc" />
@@ -704,7 +706,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\ScalerFactory.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\Scanline.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLOffScreenSurface.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLOutputSurface.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLGLVisibleSurface.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLImage.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLOffScreenSurface.cc" />
@@ -712,6 +713,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLSnow.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLVideoSystem.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SDLVisibleSurface.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\video\SDLVisibleSurfaceBase.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\Simple2xScaler.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\Simple3xScaler.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SpriteChecker.cc" />
@@ -729,7 +731,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\Video9000.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990BitmapConverter.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990CmdEngine.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990DisplayTiming.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990DummyRenderer.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990PxConverter.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\v9990\V9990PixelRenderer.cc" />
@@ -744,6 +745,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\serial\DummyRS232Device.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\I8251.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\I8254.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\serial\JVCMSXMIDI.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MC6850.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\Midi_w32.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MidiInConnector.cc" />
@@ -757,6 +759,7 @@
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MSXFacMidiInterface.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MSXMidi.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\MSXRS232.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\serial\MusicModuleMIDI.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\RS232Connector.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\RS232Device.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\serial\RS232Tester.cc" />
@@ -782,7 +785,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\DummyPrinterPortDevice.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\DynamicClock.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\EmptyPatch.cc" />
-    <ClCompile Include="$(OpenMSXSrcDir)\EmuDuration.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\EmuTime.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\FirmwareSwitch.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\GlobalSettings.cc" />
@@ -956,6 +958,7 @@
     <None Include="$(OpenMSXSrcDir)\fdc\NowindInterface.hh" />
     <None Include="$(OpenMSXSrcDir)\fdc\NowindRomDisk.hh" />
     <None Include="$(OpenMSXSrcDir)\fdc\PhilipsFDC.hh" />
+    <None Include="$(OpenMSXSrcDir)\fdc\YamahaFDC.hh" />
     <None Include="$(OpenMSXSrcDir)\fdc\RawTrack.hh" />
     <None Include="$(OpenMSXSrcDir)\fdc\RamDSKDiskImage.hh" />
     <None Include="$(OpenMSXSrcDir)\fdc\RealDrive.hh" />
@@ -1042,6 +1045,7 @@
     <None Include="$(OpenMSXSrcDir)\memory\MSXMapperIO.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\MSXMegaRam.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapper.hh" />
+    <None Include="$(OpenMSXSrcDir)\memory\MSXMemoryMapperBase.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\MSXMirrorDevice.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\MSXPac.hh" />
     <None Include="$(OpenMSXSrcDir)\memory\MSXRam.hh" />
@@ -1181,6 +1185,10 @@
     <None Include="$(OpenMSXSrcDir)\sound\YM2413Core.hh" />
     <None Include="$(OpenMSXSrcDir)\sound\YM2413Interface.hh" />
     <None Include="$(OpenMSXSrcDir)\sound\YM2413Okazaki.hh" />
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413NukeYKT.hh" />
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413NukeYktTables.ii" />
+    <None Include="$(OpenMSXSrcDir)\sound\YM2413OriginalNukeYKT.hh" />
+    <None Include="$(OpenMSXSrcDir)\sound\opll.hh" />
     <None Include="$(OpenMSXSrcDir)\sound\YMF262.hh" />
     <None Include="$(OpenMSXSrcDir)\sound\YMF278.hh" />
     <None Include="$(OpenMSXSrcDir)\thread\Thread.hh" />
@@ -1212,6 +1220,7 @@
     <None Include="$(OpenMSXSrcDir)\utils\MemoryOps.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\my_auto_ptr.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\Observer.hh" />
+    <None Include="$(OpenMSXSrcDir)\utils\one_of.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\ref.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\ScopedAssign.hh" />
     <None Include="$(OpenMSXSrcDir)\utils\sdlwin32.hh" />
@@ -1287,6 +1296,7 @@
     <None Include="$(OpenMSXSrcDir)\video\scalers\LineScalers.hh" />
     <None Include="$(OpenMSXSrcDir)\video\scalers\Multiply32.hh" />
     <None Include="$(OpenMSXSrcDir)\video\OutputSurface.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SDLOutputSurface.hh" />
     <None Include="$(OpenMSXSrcDir)\video\PixelOperations.hh" />
     <None Include="$(OpenMSXSrcDir)\video\PixelRenderer.hh" />
     <None Include="$(OpenMSXSrcDir)\video\PNG.hh" />
@@ -1309,7 +1319,6 @@
     <None Include="$(OpenMSXSrcDir)\video\scalers\ScalerFactory.hh" />
     <None Include="$(OpenMSXSrcDir)\video\Scanline.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLGLOffScreenSurface.hh" />
-    <None Include="$(OpenMSXSrcDir)\video\SDLGLOutputSurface.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLGLVisibleSurface.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLImage.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLOffScreenSurface.hh" />
@@ -1318,6 +1327,7 @@
     <None Include="$(OpenMSXSrcDir)\video\SDLSurfacePtr.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLVideoSystem.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SDLVisibleSurface.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SDLVisibleSurfaceBase.hh" />
     <None Include="$(OpenMSXSrcDir)\video\scalers\Simple2xScaler.hh" />
     <None Include="$(OpenMSXSrcDir)\video\scalers\Simple3xScaler.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SpriteChecker.hh" />
@@ -1368,6 +1378,7 @@
     <None Include="$(OpenMSXSrcDir)\serial\DummyRS232Device.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\I8251.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\I8254.hh" />
+    <None Include="$(OpenMSXSrcDir)\serial\JVCMSXMIDI.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\MC6850.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\Midi_w32.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\MidiInConnector.hh" />
@@ -1381,6 +1392,7 @@
     <None Include="$(OpenMSXSrcDir)\serial\MSXFacMidiInterface.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\MSXMidi.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\MSXRS232.hh" />
+    <None Include="$(OpenMSXSrcDir)\serial\MusicModuleMIDI.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\RS232Connector.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\RS232Device.hh" />
     <None Include="$(OpenMSXSrcDir)\serial\RS232Tester.hh" />

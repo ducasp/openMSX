@@ -1,5 +1,5 @@
-#ifndef EEPROM_93C46_H
-#define EEPROM_93C46_H
+#ifndef EEPROM_93C46_HH
+#define EEPROM_93C46_HH
 
 #include "EmuTime.hh"
 #include "SRAM.hh"
@@ -61,8 +61,8 @@ public: // for serialize
 
 private:
 	SRAM sram;
-	EmuTime completionTime = EmuTime::zero;
-	EmuTime csTime = EmuTime::zero;
+	EmuTime completionTime = EmuTime::zero();
+	EmuTime csTime = EmuTime::zero();
 	State state = IN_RESET;
 	uint16_t shiftRegister = 0;
 	uint8_t bits = 0;

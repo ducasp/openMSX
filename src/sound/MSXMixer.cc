@@ -15,6 +15,7 @@
 #include "CliComm.hh"
 #include "stl.hh"
 #include "aligned.hh"
+#include "one_of.hh"
 #include "outer.hh"
 #include "ranges.hh"
 #include "unreachable.hh"
@@ -114,8 +115,8 @@ void MSXMixer::registerSound(SoundDevice& device, float volume,
 	}
 
 	device.setOutputRate(getSampleRate());
-	infos.push_back(std::move(info));
-	updateVolumeParams(infos.back());
+	auto& i = infos.emplace_back(std::move(info));
+	updateVolumeParams(i);
 
 	commandController.getCliComm().update(CliComm::SOUNDDEVICE, device.getName(), "add");
 }
@@ -295,7 +296,7 @@ static inline void mulMix2Acc(
 //  we take R = 511/512
 //   44100Hz --> cutt-off freq = 14Hz
 //   22050Hz                     7Hz
-static constexpr auto R = 511.0f / 512.0f;
+constexpr auto R = 511.0f / 512.0f;
 
 // No new input, previous output was (non-zero) mono.
 static inline float filterMonoNull(float t0, float* __restrict out, int n)
@@ -326,7 +327,7 @@ static inline std::tuple<float, float> filterStereoNull(
 		tl0 = tl1;
 		tr0 = tr1;
 	} while (++i < n);
-	return std::make_tuple(tl0, tr0);
+	return std::tuple(tl0, tr0);
 }
 
 // New input is mono, previous output was also mono.
@@ -361,7 +362,7 @@ filterStereoMono(float tl0, float tr0, const float* __restrict in,
 		tl0 = tl1;
 		tr0 = tr1;
 	} while (++i < n);
-	return std::make_tuple(tl0, tr0);
+	return std::tuple(tl0, tr0);
 }
 
 // New input is stereo, (previous output either mono/stereo)
@@ -379,7 +380,7 @@ filterStereoStereo(float tl0, float tr0, const float* __restrict in,
 		tl0 = tl1;
 		tr0 = tr1;
 	} while (++i < n);
-	return std::make_tuple(tl0, tr0);
+	return std::tuple(tl0, tr0);
 }
 
 // We have both mono and stereo input (and produce stereo output)
@@ -398,12 +399,12 @@ filterBothStereo(float tl0, float tr0, const float* __restrict inM,
 		tl0 = tl1;
 		tr0 = tr1;
 	} while (++i < n);
-	return std::make_tuple(tl0, tr0);
+	return std::tuple(tl0, tr0);
 }
 
 static bool approxEqual(float x, float y)
 {
-	static const float threshold = 1.0f / 32768;
+	constexpr float threshold = 1.0f / 32768;
 	return std::abs(x - y) < threshold;
 }
 
@@ -419,7 +420,7 @@ void MSXMixer::generate(float* output, EmuTime::param time, unsigned samples)
 	// When samples==0, call updateBuffer() but skip all further processing
 	// (handling this as a special case allows to simplify the code below).
 	if (samples == 0) {
-		SSE_ALIGNED(float dummyBuf[4]);
+		alignas(SSE_ALIGNMENT) float dummyBuf[4];
 		for (auto& info : infos) {
 			info.device->updateBuffer(0, dummyBuf, time);
 		}
@@ -432,8 +433,8 @@ void MSXMixer::generate(float* output, EmuTime::param time, unsigned samples)
 	VLA_SSE_ALIGNED(float, stereoBuf, 2 * samples + 3);
 	VLA_SSE_ALIGNED(float, tmpBuf,    2 * samples + 3);
 
-	static const unsigned HAS_MONO_FLAG = 1;
-	static const unsigned HAS_STEREO_FLAG = 2;
+	constexpr unsigned HAS_MONO_FLAG = 1;
+	constexpr unsigned HAS_STEREO_FLAG = 2;
 	unsigned usedBuffers = 0;
 
 	// FIXME: The Infos should be ordered such that all the mono
@@ -618,8 +619,8 @@ void MSXMixer::update(const Setting& setting)
 	} else if (dynamic_cast<const IntegerSetting*>(&setting)) {
 		auto it = find_if_unguarded(infos,
 			[&](const SoundDeviceInfo& i) {
-				return (i.volumeSetting .get() == &setting) ||
-				       (i.balanceSetting.get() == &setting); });
+				return &setting == one_of(i.volumeSetting .get(),
+				                          i.balanceSetting.get()); });
 		updateVolumeParams(*it);
 	} else if (dynamic_cast<const StringSetting*>(&setting)) {
 		changeRecordSetting(setting);

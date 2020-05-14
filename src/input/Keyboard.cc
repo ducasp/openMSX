@@ -19,6 +19,7 @@
 #include "serialize_stl.hh"
 #include "serialize_meta.hh"
 #include "openmsx.hh"
+#include "one_of.hh"
 #include "outer.hh"
 #include "stl.hh"
 #include "view.hh"
@@ -71,13 +72,13 @@ private:
 REGISTER_POLYMORPHIC_CLASS(StateChange, KeyMatrixState, "KeyMatrixState");
 
 
-static const char* defaultKeymapForMatrix[] = {
+constexpr const char* const defaultKeymapForMatrix[] = {
 	"int", // MATRIX_MSX
 	"svi", // MATRIX_SVI
 	"cvjoy", // MATRIX_CVJOY
 };
 
-static const std::array<KeyMatrixPosition, UnicodeKeymap::KeyInfo::NUM_MODIFIERS>
+constexpr std::array<KeyMatrixPosition, UnicodeKeymap::KeyInfo::NUM_MODIFIERS>
 		modifierPosForMatrix[] = {
 	{ // MATRIX_MSX
 		KeyMatrixPosition(6, 0), // SHIFT
@@ -255,9 +256,7 @@ void Keyboard::transferHostKeyMatrix(const Keyboard& source)
 void Keyboard::signalMSXEvent(const shared_ptr<const Event>& event,
                               EmuTime::param time)
 {
-	EventType type = event->getType();
-	if ((type == OPENMSX_KEY_DOWN_EVENT) ||
-	    (type == OPENMSX_KEY_UP_EVENT)) {
+	if (event->getType() == one_of(OPENMSX_KEY_DOWN_EVENT, OPENMSX_KEY_UP_EVENT)) {
 		// Ignore possible console on/off events:
 		// we do not rescan the keyboard since this may lead to
 		// an unwanted pressing of <return> in MSX after typing
@@ -347,10 +346,14 @@ void Keyboard::changeKeyMatrixEvent(EmuTime::param time, byte row, byte newValue
  */
 bool Keyboard::processQueuedEvent(const Event& event, EmuTime::param time)
 {
+	auto mode = keyboardSettings.getMappingMode();
+
 	auto& keyEvent = checked_cast<const KeyEvent&>(event);
 	bool down = event.getType() == OPENMSX_KEY_DOWN_EVENT;
-	auto key = static_cast<Keys::KeyCode>(
-		int(keyEvent.getKeyCode()) & int(Keys::K_MASK));
+	auto code = (mode == KeyboardSettings::POSITIONAL_MAPPING)
+	          ? keyEvent.getScanCode() : keyEvent.getKeyCode();
+	auto key = static_cast<Keys::KeyCode>(int(code) & int(Keys::K_MASK));
+
 	if (down) {
 		// TODO: refactor debug(...) method to expect a std::string and then adapt
 		// all invocations of it to provide a properly formatted string, using the C++
@@ -376,7 +379,7 @@ bool Keyboard::processQueuedEvent(const Event& event, EmuTime::param time)
 	}
 
 	// Process deadkeys.
-	if (keyboardSettings.getMappingMode() == KeyboardSettings::CHARACTER_MAPPING) {
+	if (mode == KeyboardSettings::CHARACTER_MAPPING) {
 		for (unsigned n = 0; n < 3; n++) {
 			if (key == keyboardSettings.getDeadkeyHostKey(n)) {
 				UnicodeKeymap::KeyInfo deadkey = unicodeKeymap.getDeadkey(n);
@@ -518,18 +521,17 @@ void Keyboard::updateKeyMatrix(EmuTime::param time, bool down, KeyMatrixPosition
  */
 bool Keyboard::processKeyEvent(EmuTime::param time, bool down, const KeyEvent& keyEvent)
 {
-	Keys::KeyCode keyCode = keyEvent.getKeyCode();
-	auto key = static_cast<Keys::KeyCode>(
-		int(keyCode) & int(Keys::K_MASK));
-	unsigned unicode;
+	auto mode = keyboardSettings.getMappingMode();
 
-	bool isOnKeypad = (
+	auto keyCode  = keyEvent.getKeyCode();
+	auto scanCode = keyEvent.getScanCode();
+	auto code = (mode == KeyboardSettings::POSITIONAL_MAPPING) ? scanCode : keyCode;
+	auto key = static_cast<Keys::KeyCode>(int(code) & int(Keys::K_MASK));
+
+	bool isOnKeypad =
 		(key >= Keys::K_KP0 && key <= Keys::K_KP9) ||
-		(key == Keys::K_KP_PERIOD) ||
-		(key == Keys::K_KP_DIVIDE) ||
-		(key == Keys::K_KP_MULTIPLY) ||
-		(key == Keys::K_KP_MINUS) ||
-		(key == Keys::K_KP_PLUS));
+		(key == one_of(Keys::K_KP_PERIOD, Keys::K_KP_DIVIDE, Keys::K_KP_MULTIPLY,
+		               Keys::K_KP_MINUS,  Keys::K_KP_PLUS));
 
 	if (isOnKeypad && !hasKeypad &&
 	    !keyboardSettings.getAlwaysEnableKeypad()) {
@@ -540,10 +542,12 @@ bool Keyboard::processKeyEvent(EmuTime::param time, bool down, const KeyEvent& k
 
 	if (down) {
 		UnicodeKeymap::KeyInfo keyInfo;
+		unsigned unicode;
 		if (isOnKeypad ||
-		    keyboardSettings.getMappingMode() == KeyboardSettings::KEY_MAPPING) {
-			// User entered a key on numeric keypad or the driver is in KEY
-			// mapping mode.
+		    mode == one_of(KeyboardSettings::KEY_MAPPING,
+		                   KeyboardSettings::POSITIONAL_MAPPING)) {
+			// User entered a key on numeric keypad or the driver is in
+			// KEY/POSITIONAL mapping mode.
 			// First option (keypad) maps to same unicode as some other key
 			// combinations (e.g. digit on main keyboard or TAB/DEL).
 			// Use unicode to handle the more common combination and use direct
@@ -615,6 +619,7 @@ bool Keyboard::processKeyEvent(EmuTime::param time, bool down, const KeyEvent& k
 			keyCode = key = Keys::K_INSERT;
 		}
 #endif
+		unsigned unicode;
 		if (key < MAX_KEYSYM) {
 			unicode = dynKeymap[key]; // Get the unicode that was derived from this key
 		} else {
@@ -941,7 +946,7 @@ Keyboard::KeyMatrixDownCmd::KeyMatrixDownCmd(CommandController& commandControlle
 }
 
 void Keyboard::KeyMatrixDownCmd::execute(span<const TclObject> tokens,
-                               TclObject& /*result*/, EmuTime::param /*time*/)
+                                         TclObject& /*result*/, EmuTime::param /*time*/)
 {
 	checkNumArgs(tokens, 3, Prefix{1}, "row mask");
 	auto& keyboard = OUTER(Keyboard, keyMatrixDownCmd);
@@ -1234,9 +1239,9 @@ void Keyboard::CapsLockAligner::alignCapsLock(EmuTime::param time)
 		// processCapslockEvent() because we want this to be recorded
 		auto event = make_shared<KeyDownEvent>(Keys::K_CAPSLOCK);
 		keyboard.msxEventDistributor.distributeEvent(event, time);
-        keyboard.debug("Sending fake CAPS release\n");
-        state = MUST_DISTRIBUTE_KEY_RELEASE;
-        setSyncPoint(time + EmuDuration::hz(10)); // 0.1s (MSX time)
+		keyboard.debug("Sending fake CAPS release\n");
+		state = MUST_DISTRIBUTE_KEY_RELEASE;
+		setSyncPoint(time + EmuDuration::hz(10)); // 0.1s (MSX time)
 	} else {
 		state = IDLE;
 	}
@@ -1374,7 +1379,7 @@ INSTANTIATE_SERIALIZE_METHODS(Keyboard::MsxKeyEventQueue);
 /** Keyboard bindings ****************************************/
 
 // Mapping from SDL keys to emulated keys, ordered by MatrixType
-static const KeyMatrixPosition x = KeyMatrixPosition();
+constexpr KeyMatrixPosition x = KeyMatrixPosition();
 const KeyMatrixPosition Keyboard::keyTabs[][MAX_KEYSYM] = {
   {
 // MSX Key-Matrix table

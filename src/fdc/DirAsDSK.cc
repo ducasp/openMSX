@@ -7,6 +7,7 @@
 #include "FileException.hh"
 #include "ReadDir.hh"
 #include "StringOp.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "stl.hh"
 #include <cassert>
@@ -18,22 +19,22 @@ using std::vector;
 
 namespace openmsx {
 
-static const unsigned SECTOR_SIZE = sizeof(SectorBuffer);
-static const unsigned SECTORS_PER_DIR = 7;
-static const unsigned NUM_FATS = 2;
-static const unsigned NUM_TRACKS = 80;
-static const unsigned SECTORS_PER_CLUSTER = 2;
-static const unsigned SECTORS_PER_TRACK = 9;
-static const unsigned FIRST_FAT_SECTOR = 1;
-static const unsigned DIR_ENTRIES_PER_SECTOR =
+constexpr unsigned SECTOR_SIZE = sizeof(SectorBuffer);
+constexpr unsigned SECTORS_PER_DIR = 7;
+constexpr unsigned NUM_FATS = 2;
+constexpr unsigned NUM_TRACKS = 80;
+constexpr unsigned SECTORS_PER_CLUSTER = 2;
+constexpr unsigned SECTORS_PER_TRACK = 9;
+constexpr unsigned FIRST_FAT_SECTOR = 1;
+constexpr unsigned DIR_ENTRIES_PER_SECTOR =
 	SECTOR_SIZE / sizeof(MSXDirEntry);
 
 // First valid regular cluster number.
-static const unsigned FIRST_CLUSTER = 2;
+constexpr unsigned FIRST_CLUSTER = 2;
 
-static const unsigned FREE_FAT = 0x000;
-static const unsigned BAD_FAT  = 0xFF7;
-static const unsigned EOF_FAT  = 0xFFF; // actually 0xFF8-0xFFF
+constexpr unsigned FREE_FAT = 0x000;
+constexpr unsigned BAD_FAT  = 0xFF7;
+constexpr unsigned EOF_FAT  = 0xFFF; // actually 0xFF8-0xFFF
 
 
 // Transform BAD_FAT (0xFF7) and EOF_FAT-range (0xFF8-0xFFF)
@@ -229,8 +230,7 @@ static string hostToMsxName(string hostName)
 	transform_in_place(hostName, [](char a) {
 		return (a == ' ') ? '_' : ::toupper(a);
 	});
-	std::string_view file, ext;
-	StringOp::splitOnLast(hostName, '.', file, ext);
+	auto [file, ext] = StringOp::splitOnLast(hostName, '.');
 	if (file.empty()) std::swap(file, ext);
 
 	string result(8 + 3, ' ');
@@ -264,7 +264,7 @@ DirAsDSK::DirAsDSK(DiskChanger& diskChanger_, CliComm& cliComm_,
 	, cliComm(cliComm_)
 	, hostDir(hostDir_.getResolved() + '/')
 	, syncMode(syncMode_)
-	, lastAccess(EmuTime::zero)
+	, lastAccess(EmuTime::zero())
 	, nofSectors((diskChanger_.isDoubleSidedDrive() ? 2 : 1) * SECTORS_PER_TRACK * NUM_TRACKS)
 	, nofSectorsPerFat((((3 * nofSectors) / (2 * SECTORS_PER_CLUSTER)) + SECTOR_SIZE - 1) / SECTOR_SIZE)
 	, firstSector2ndFAT(FIRST_FAT_SECTOR + nofSectorsPerFat)
@@ -435,7 +435,7 @@ void DirAsDSK::deleteMSXFile(DirIndex dirIndex)
 	mapDirs.erase(dirIndex);
 
 	char c = msxDir(dirIndex).filename[0];
-	if (c == 0 || c == char(0xE5)) {
+	if (c == one_of(0, char(0xE5))) {
 		// Directory entry not in use, don't need to do anything.
 		return;
 	}
@@ -673,8 +673,7 @@ static size_t weight(const string& hostName)
 {
 	// TODO this weight function can most likely be improved
 	size_t result = 0;
-	std::string_view file, ext;
-	StringOp::splitOnLast(hostName, '.', file, ext);
+	auto [file, ext] = StringOp::splitOnLast(hostName, '.');
 	// too many '.' characters
 	result += ranges::count(file, '.') * 100;
 	// too long extension
@@ -798,8 +797,8 @@ void DirAsDSK::addNewHostFile(const string& hostSubDir, const string& hostName,
 	string fullHostName = hostDir + hostPath;
 
 	// TODO check for available free space on disk instead of max free space
-	static const int DISK_SPACE = (nofSectors - firstDataSector) * SECTOR_SIZE;
-	if (fst.st_size > DISK_SPACE) {
+	int diskSpace = (nofSectors - firstDataSector) * SECTOR_SIZE;
+	if (fst.st_size > diskSpace) {
 		cliComm.printWarning("File too large: ", fullHostName);
 		return;
 	}
@@ -850,8 +849,7 @@ DirAsDSK::DirIndex DirAsDSK::getFreeDirEntry(unsigned msxDirSector)
 		for (unsigned idx = 0; idx < DIR_ENTRIES_PER_SECTOR; ++idx) {
 			DirIndex dirIndex(msxDirSector, idx);
 			const char* msxName = msxDir(dirIndex).filename;
-			if ((msxName[0] == char(0x00)) ||
-			    (msxName[0] == char(0xE5))) {
+			if (msxName[0] == one_of(char(0x00), char(0xE5))) {
 				// Found an unused msx entry. There shouldn't
 				// be any hostfile mapped to this entry.
 				assert(!mapDirs.contains(dirIndex));
@@ -1008,8 +1006,7 @@ template<typename FUNC> bool DirAsDSK::scanMsxDirs(FUNC func, unsigned sector)
 				const MSXDirEntry& entry = msxDir(dirIndex);
 				if (func.onDirEntry(dirIndex, entry)) return true;
 
-				if ((entry.filename[0] == char(0x00)) ||
-				    (entry.filename[0] == char(0xE5)) ||
+				if ((entry.filename[0] == one_of(char(0x00), char(0xE5))) ||
 				    !(entry.attrib & MSXDirEntry::ATT_DIRECTORY)) {
 					// Not a directory.
 					continue;
@@ -1166,7 +1163,7 @@ void DirAsDSK::exportToHost(DirIndex dirIndex, DirIndex dirDirIndex)
 	} else {
 		// Host file/dir does not yet exist, create hostname from
 		// msx name.
-		if ((msxName[0] == char(0x00)) || (msxName[0] == char(0xE5))) {
+		if (msxName[0] == one_of(char(0x00), char(0xE5))) {
 			// Invalid MSX name, don't do anything.
 			return;
 		}

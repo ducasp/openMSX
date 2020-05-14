@@ -10,6 +10,7 @@
 #include "Reactor.hh"
 #include "MSXException.hh"
 #include "openmsx.hh"
+#include "one_of.hh"
 #include "unreachable.hh"
 #include "xrange.hh"
 #include <algorithm>
@@ -31,14 +32,14 @@ namespace openmsx {
   * Note that when using a background image on the GLConsole,
   * that image's alpha channel is used instead.
   */
-static const int CONSOLE_ALPHA = 180;
-static const uint64_t BLINK_RATE = 500000; // us
-static const int CHAR_BORDER = 4;
+constexpr int CONSOLE_ALPHA = 180;
+constexpr uint64_t BLINK_RATE = 500000; // us
+constexpr int CHAR_BORDER = 4;
 
 
 // class OSDConsoleRenderer
 
-static const string_view defaultFont = "skins/VeraMono.ttf.gz";
+constexpr string_view defaultFont = "skins/VeraMono.ttf.gz";
 
 OSDConsoleRenderer::OSDConsoleRenderer(
 		Reactor& reactor_, CommandConsole& console_,
@@ -162,8 +163,7 @@ void OSDConsoleRenderer::update(const Setting& setting)
 {
 	if (&setting == &consoleSetting) {
 		setActive(consoleSetting.getBoolean());
-	} else if ((&setting == &fontSetting) ||
-	           (&setting == &fontSizeSetting)) {
+	} else if (&setting == one_of(&fontSetting, &fontSizeSetting)) {
 		loadFont(fontSetting.getString());
 	} else {
 		UNREACHABLE;
@@ -178,8 +178,6 @@ void OSDConsoleRenderer::setActive(bool active_)
 	display.repaintDelayed(40000); // 25 fps
 
 	activeTime = Timer::getTime();
-
-	reactor.getInputEventGenerator().setKeyRepeat(active);
 }
 
 byte OSDConsoleRenderer::getVisibility() const
@@ -390,7 +388,7 @@ void OSDConsoleRenderer::insertInCache(
 	string text, unsigned rgb, std::unique_ptr<BaseImage> image,
 	unsigned width)
 {
-	static const unsigned MAX_TEXT_CACHE_SIZE = 250;
+	constexpr unsigned MAX_TEXT_CACHE_SIZE = 250;
 	if (textCache.size() == MAX_TEXT_CACHE_SIZE) {
 		// flush the least recently used entry
 		auto it = std::prev(std::end(textCache));

@@ -133,7 +133,7 @@ void DiskChanger::sendChangeDiskEvent(span<string> args)
 				args, scheduler->getCurrentTime()));
 	} else {
 		signalStateChange(std::make_shared<MSXCommandEvent>(
-			args, EmuTime::zero));
+			args, EmuTime::zero()));
 	}
 }
 
@@ -290,7 +290,7 @@ string DiskCommand::help(const vector<string>& /*tokens*/) const
 void DiskCommand::tabCompletion(vector<string>& tokens) const
 {
 	if (tokens.size() >= 2) {
-		static const char* const extra[] = {
+		static constexpr const char* const extra[] = {
 			"eject", "ramdsk", "insert",
 		};
 		completeFileName(tokens, userFileContext(), extra);
@@ -408,7 +408,7 @@ template<> struct SerializeConstructorArgs<DiskChanger>
 	{
 		string driveName;
 		ar.serialize("driveName", driveName);
-		return make_tuple(driveName);
+		return std::tuple(driveName);
 	}
 };
 

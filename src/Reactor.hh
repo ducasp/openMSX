@@ -112,8 +112,6 @@ public:
 	void replaceBoard(MSXMotherBoard& oldBoard, Board newBoard); // for reverse
 
 private:
-	using Boards = std::vector<Board>;
-
 	void createMachineSetting();
 	void switchBoard(MSXMotherBoard* newBoard);
 	void deleteBoard(MSXMotherBoard* board);
@@ -125,6 +123,12 @@ private:
 
 	// EventListener
 	int signalEvent(const std::shared_ptr<const Event>& event) override;
+
+	// Run 1 iteration of the openMSX event loop. Typically this will
+	// emulate about 1 frame (but could be more or less depending on
+	// various factors). Returns true when openMSX wants to continue
+	// running.
+	bool doOneIteration();
 
 	void unpause();
 	void pause();
@@ -177,8 +181,8 @@ private:
 	//  - non-main thread can only access activeBoard via specific
 	//    member functions (atm only via enterMainLoop()), it needs to take
 	//    the mbMutex lock
-	Boards boards; // unordered
-	Boards garbageBoards;
+	std::vector<Board> boards; // unordered
+	std::vector<Board> garbageBoards;
 	MSXMotherBoard* activeBoard = nullptr; // either nullptr or a board inside 'boards'
 
 	int blockedCounter = 0;

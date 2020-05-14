@@ -7,7 +7,8 @@
 #include "RenderSettings.hh"
 #include "PostProcessor.hh"
 #include "MemoryOps.hh"
-#include "VisibleSurface.hh"
+#include "OutputSurface.hh"
+#include "one_of.hh"
 #include "build-info.hh"
 #include "components.hh"
 #include <algorithm>
@@ -21,13 +22,13 @@ namespace openmsx {
 
 /** VDP ticks between start of line and start of left border.
   */
-static const int TICKS_LEFT_BORDER = 100 + 102;
+constexpr int TICKS_LEFT_BORDER = 100 + 102;
 
 /** The middle of the visible (display + borders) part of a line,
   * expressed in VDP ticks since the start of the line.
   * TODO: Move this to a central location?
   */
-static const int TICKS_VISIBLE_MIDDLE =
+constexpr int TICKS_VISIBLE_MIDDLE =
 	TICKS_LEFT_BORDER + (VDP::TICKS_PER_LINE - TICKS_LEFT_BORDER - 27) / 2;
 
 /** Translate from absolute VDP coordinates to screen coordinates:
@@ -69,12 +70,12 @@ inline void SDLRasterizer<Pixel>::renderBitmapLine(Pixel* buf, unsigned vramLine
 
 template <class Pixel>
 SDLRasterizer<Pixel>::SDLRasterizer(
-		VDP& vdp_, Display& display, VisibleSurface& screen_,
+		VDP& vdp_, Display& display, OutputSurface& screen_,
 		std::unique_ptr<PostProcessor> postProcessor_)
 	: vdp(vdp_), vram(vdp.getVRAM())
 	, screen(screen_)
 	, postProcessor(std::move(postProcessor_))
-	, workFrame(std::make_unique<RawFrame>(screen.getSDLFormat(), 640, 240))
+	, workFrame(std::make_unique<RawFrame>(screen.getPixelFormat(), 640, 240))
 	, renderSettings(display.getRenderSettings())
 	, characterConverter(vdp, palFg, palBg)
 	, bitmapConverter(palFg, PALETTE256, V9958_COLORS)
@@ -682,10 +683,10 @@ bool SDLRasterizer<Pixel>::isRecording() const
 template <class Pixel>
 void SDLRasterizer<Pixel>::update(const Setting& setting)
 {
-	if ((&setting == &renderSettings.getGammaSetting()) ||
-	    (&setting == &renderSettings.getBrightnessSetting()) ||
-	    (&setting == &renderSettings.getContrastSetting()) ||
-	    (&setting == &renderSettings.getColorMatrixSetting())) {
+	if (&setting == one_of(&renderSettings.getGammaSetting(),
+	                       &renderSettings.getBrightnessSetting(),
+	                       &renderSettings.getContrastSetting(),
+	                       &renderSettings.getColorMatrixSetting())) {
 		precalcPalette();
 		resetPalette();
 	}

@@ -120,6 +120,7 @@
         <li><a class="internal" href="#horizontal_stretch">horizontal_stretch</a></li>
         <li><a class="internal" href="#inputdelay">inputdelay</a></li>
         <li><a class="internal" href="#interleave_black_frame">interleave_black_frame</a></li>
+        <li><a class="internal" href="#invalid_ppi_mode_callback">invalid_ppi_mode_callback</a></li>
         <li><a class="internal" href="#invalid_psg_directions_callback">invalid_psg_directions_callback</a></li>
         <li><a class="internal" href="#joystickN_config">joystick&lt;n&gt;_config</a></li>
         <li><a class="internal" href="#joystickN_deadzone">joystick&lt;n&gt;_deadzone</a></li>
@@ -171,6 +172,7 @@
         <li><a class="internal" href="#soundchip_vibrato_frequency">&lt;soundchip&gt;_vibrato_frequency</a></li>
         <li><a class="internal" href="#soundchip_vibrato_percent">&lt;soundchip&gt;_vibrato_percent</a></li>
         <li><a class="internal" href="#soundchip_volume">&lt;soundchip&gt;_volume</a></li>
+        <li><a class="internal" href="#sync_to_vblank_mode">sync_to_vblank_mode</a></li>
         <li><a class="internal" href="#throttle">throttle</a></li>
         <li><a class="internal" href="#too_fast_vram_access">too_fast_vram_access</a></li>
         <li><a class="internal" href="#too_fast_vram_access_callback">too_fast_vram_access_callback</a></li>
@@ -815,6 +817,21 @@
     offer convenience wrappers around these commands. For example: <a class="internal" href="#other"><code>showmem</code></a>, <a class="internal" href="#other"><code>disasm</code></a>, <a class="internal" href="#other"><code>cpuregs</code></a>, <a class="internal" href="#other"><code>save_debuggable</code></a>, etc.
   </div>
 
+  <h3><a id="disable_reversebar">disable_reversebar</a></h3>
+
+  <p>Disables the bar on top of the gui to reverse the emulator status. Use also <code>toggle_reversebar</code> command to enable/disable this feature.</p>
+
+  <div class="subsectiontitle">
+    usage:
+  </div>
+
+  <table>
+    <tr>
+      <td><code>disable_reversebar</code></td>
+      <td>Disables reverse status emulator bar.</td>
+    </tr>
+  </table>
+
   <h3><a id="disk">disk&lt;x&gt; / virtual_drive</a></h3>
 
   <p>Insert a disk image in a drive. Optionally apply an IPS patch to the disk image.
@@ -890,6 +907,21 @@
     <tr>
       <td><code>exit</code></td>
       <td>Exits the emulator</td>
+    </tr>
+  </table>
+
+  <h3><a id="enable_reversebar">enable_reversebar</a></h3>
+
+  <p>Enables a bar on top of the gui to reverse the emulator status. Use also <code>toggle_reversebar</code> command to enable/disable this feature.</p>
+
+  <div class="subsectiontitle">
+    usage:
+  </div>
+
+  <table>
+    <tr>
+      <td><code>enable_reversebar</code></td>
+      <td>Enable reverse status emulator bar.</td>
     </tr>
   </table>
 
@@ -2773,7 +2805,7 @@
     </tr>
     <tr>
       <td><code>set auto_enable_reverse gui</code></td>
-      <td>Enable the reverse feature and the reverse bar when openMSX starts</td>
+      <td>Enable the reverse feature and the reverse bar when openMSX starts. Default setting for Desktop/PC</td>
     </tr>
   </table>
 
@@ -3731,6 +3763,27 @@
   </table>
 
 
+  <h3><a id="invalid_ppi_mode_callback">invalid_ppi_mode_callback</a></h3>
+
+  <p>Selects the Tcl procedure to be called when the running MSX software has selected an invalid PPI mode. Or at least a PPI mode that's not yet correctly emulated. Typically on a real machine these modes will hang the MSX.</p>
+
+  <p>The default openmsx startup scripts initialize this setting with a proc that prints a warning message just once. Though if you're a developer you may want to change this to always print the warning or automatically break emulation when this happens so you can debug the problem.</p>
+
+  <div class="subsectiontitle">
+    usage:
+  </div>
+  <table>
+    <tr>
+      <td><code>set invalid_ppi_mode_callback</code></td>
+      <td>Shows the current setting</td>
+    </tr>
+    <tr>
+      <td><code>set invalid_ppi_mode_callback my_callback_proc</code></td>
+      <td>Sets a new callback proc</td>
+    </tr>
+  </table>
+
+
   <h3><a id="invalid_psg_directions_callback">invalid_psg_directions_callback</a></h3>
 
   <p>Selects the Tcl procedure to be called when the running MSX software has selected invalid PSG port directions (port A should always be set as input).</p>
@@ -4042,22 +4095,26 @@
 
   <h3><a id="kbd_mapping_mode">kbd_mapping_mode</a></h3>
 
-  <p>The keyboard driver can work in two mapping modes; KEY mapping and CHARACTER mapping.</p>
+  <p>The keyboard driver can work in several mapping modes: CHARACTER, POSITIONAL or KEY.</p>
 
   <dl>
-    <dt>KEY mapping:</dt>
-    <dd>A key pressed on the host keyboard maps to one specific key on the MSX keyboard. This mode
-  is convenient when the host keyboard and the MSX keyboard have the same layout or when working with a program
-  that directly reads the keyboard matrix and forces the user to enter a certain key combination that can not
-  be auto-generated in the CHARACTER mapping mode.</dd>
     <dt>CHARACTER mapping:</dt>
-    <dd>A character entered by the user is mapped to the correct key combination on the MSX to
-  enter that character. For example, when the user enters an ! character and openMSX is emulating an 'international'
-  MSX model, the keyboard driver will press SHIFT and 1 on the MSX keyboard. This will be done regardless of the key
-  or keys that the user pressed on the host keyboard to enter the ! character.<br/>
+    <dd>A character entered by the user on the host keyboard is mapped to the correct key combination on the MSX keyboard to
+  enter that same character. For example, when the user enters an '!' character and openMSX is emulating an 'international'
+  MSX model, the keyboard driver will press SHIFT and '1' on the MSX keyboard. This will be done regardless of the key
+  or keys that the user pressed on the host keyboard to enter that '!' character.<br/>
   This is especially useful when the user has an AZERTY host keyboard and is working on a QWERTY style MSX or
   when he has a US-QWERTY keyboard and is working on a Japanese MSX.<br/>
-  Note that special keys (like CAPSLOCK) are mapped directly, just like in the KEY mapping mode.</dd>
+  In other words: in this mode openMSX is aware of both the host and the MSX keyboard layout and tries to remap host key-combinations to the corresponding MSX key-combinations that produce the same character.<br/>
+  Special host keys (like CURSOR keys or CAPSLOCK) are mapped directly to the corresponding MSX keys.<br/>
+  Note that CHARACTER mode isn't perfect (help to improve it is always appreciated). In some cases it may be more convenient or even required to use one of the other mapping modes.</dd>
+
+    <dt>POSITIONAL mapping:</dt>
+    <dd>In this mode both the host and the MSX keyboard layout are ignored. Host keys get mapped to MSX keys that are (approximately) in the same position on both keyboards. (More technically, host 'scan-codes' get mapped to MSX 'keyboard-matrix positions'.)</dd>
+
+    <dt>KEY mapping:</dt>
+    <dd>This mode is deprecated, it's superseded by the previous two modes and may get removed in a future openMSX release.<br/>
+    This mode has rudimentary knowledge about the host keyboard layout, but no knowledge about the MSX keyboard layout. It remaps individual keys, not key combinations. Take for example a french AZERTY host keyboard and an emulated MSX with 'international' keyboard layout. Pressing the 'A' host key correctly maps to the 'A' MSX key. But pressing SHIFT+'3' on the host (which produces '3'), maps to SHIFT+'3' on the MSX keyboard (which produces '#').</dd>
   </dl>
 
   <div class="subsectiontitle">
@@ -4078,9 +4135,9 @@
     </tr>
 
     <tr>
-      <td><code>set&nbsp;kbd_mapping_mode&nbsp;KEY</code></td>
+      <td><code>set&nbsp;kbd_mapping_mode&nbsp;POSITIONAL</code></td>
 
-      <td>Set the KEY mapping mode</td>
+      <td>Set the POSITIONAL mapping mode</td>
     </tr>
 
   </table>
@@ -5302,9 +5359,45 @@
     <code>set "FMPAC_volume" 50</code>
   </div>
 
+  <h3><a id="sync_to_vblank_mode">sync_to_vblank_mode</a></h3>
+
+  <p>Sets the sync to vblank mode. This setting determines whether the SDLGL-PP renderer should synchronizes its frames to your host monitors frame rate (e.g. 60fps).</p>
+  <p>The default value is not to synchronize ("<code>immediate</code>"). To synchronize with the host monitor, set the value to <code>sync</code> or <code>adaptive</code>. The former means that the frame will always be only output in sync with the monitor. If the host system is busy it may mean that a frame is too late for the monitor and it will be displayed one frame later. Adaptive sync means that if the frame is too late, it will be drawn anyway, but immediately, not waiting for next monitor frame.</p>
+  <p>Use one of the synchronization modes if your MSX is running at about the same frame rate as your monitor (e.g. 60Hz MSX output on a 60Hz host monitor) and you want to avoid (or reduce) tearing, which can be quite visible in smooth horizontal scrolling demos. Keep in mind <a class="internal" href="throttle">throttle mode</a> off works a bit differently in the <code>sync</code> mode (see there). Note that adaptive sync is not supported on all hardware. When that is the case, openMSX falls back to normal sync.</p>
+
+  <div class="subsectiontitle">
+    usage:
+  </div>
+
+  <table>
+    <tr>
+      <td><code>set sync_to_vblank_mode</code></td>
+
+      <td>Shows the current setting</td>
+    </tr>
+
+    <tr>
+      <td><code>set sync_to_vblank_mode immediate</code></td>
+
+      <td>No synchronization to monitor frame rate: draw immediately (default)</td>
+    </tr>
+
+    <tr>
+      <td><code>set sync_to_vblank_mode sync</code></td>
+
+      <td>Synchronize to monitor frame rate always</td>
+    </tr>
+
+    <tr>
+      <td><code>set sync_to_vblank_mode adaptive</code></td>
+
+      <td>Synchronize to monitor frame rate when possible, otherwise draw immediately. Not available on all host hardware.</td>
+    </tr>
+  </table>
+
   <h3><a id="throttle">throttle</a></h3>
 
-  <p>Sets throttle mode. In throttle mode the emulator tries to run at the specified speed relative to a real MSX (see <a class="internal" href="#speed">speed</a> command). When throttling is turned off the emulator runs as fast as possible. The speed may be limited to the framerate of your monitor (e.g. 60fps) due to how the OpenGL driver works, when using the (default) SDLGL-PP renderer. To increase the speed, set the <a class="internal" href="#maxframeskip">maxframeskip</a> setting to a high value (e.g. 100).</p>
+  <p>Sets throttle mode. In throttle mode the emulator tries to run at the specified speed relative to a real MSX (see <a class="internal" href="#speed">speed</a> command). When throttling is turned off the emulator runs as fast as possible. The speed may be limited to the framerate of your monitor (e.g. 60fps) if you have set <a class="internal" href="sync_to_vblank_mode">sync to vblank_mode</a> to <code>sync</code>, when using the (default) SDLGL-PP renderer. In that case, to increase the speed, set the <a class="internal" href="#maxframeskip">maxframeskip</a> setting to a high value (e.g. 100).</p>
 
   <div class="subsectiontitle">
     usage:
@@ -5329,7 +5422,6 @@
       <td>Turn throttle mode off (fast forward)</td>
     </tr>
   </table>
-
 
   <h3><a id="too_fast_vram_access">too_fast_vram_access</a></h3>
 
@@ -5616,7 +5708,7 @@
 
   <h3><a id="z80_freq">z80_freq / z80_freq_locked</a></h3>
 
-  <p>These two settings control the Z80 clock frequency. When <code>z80_freq_locked</code> is true the emulated Z80 runs at the normal 3.579545 MHz (or optionally 5.369318 MHz on some machines). When <code>z80_freq_locked</code> is false the value of <code>z80_freq</code> is taken as the Z80 clock frequency.</p>
+  <p>These two settings control the Z80 clock frequency. When <code>z80_freq_locked</code> is true the emulated Z80 runs at the normal 3.579545 MHz (or optionally 5.369318 MHz on some machines). In other words: the MSX is in control of the CPU frequency. When <code>z80_freq_locked</code> is false the value of <code>z80_freq</code> is taken as the Z80 clock frequency.</p>
 
   <p>WARNING: be careful when changing these settings. When saving the settings in which a different clock is activated, this will be applied for all machines, as these are global settings. Some software (like demos) may stop working properly with a changed CPU clock frequency. Specifically, using a value (just) below the normal value may cause problems loading CAS images, as these are converted to a high baud rate WAV file internally and when the MSX becomes slower it cannot handle that high baud rate.</p>
 

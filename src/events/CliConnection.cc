@@ -88,7 +88,7 @@ void CliConnection::log(CliComm::LogLevel level, std::string_view message)
 }
 
 void CliConnection::update(CliComm::UpdateType type, std::string_view machine,
-                              std::string_view name, std::string_view value)
+                           std::string_view name, std::string_view value)
 {
 	if (!getUpdateEnable(type)) return;
 
@@ -158,7 +158,7 @@ int CliConnection::signalEvent(const std::shared_ptr<const Event>& event)
 
 // class StdioConnection
 
-static const int BUF_SIZE = 4096;
+constexpr int BUF_SIZE = 4096;
 StdioConnection::StdioConnection(CommandController& commandController_,
                                  EventDistributor& eventDistributor_)
 	: CliConnection(commandController_, eventDistributor_)

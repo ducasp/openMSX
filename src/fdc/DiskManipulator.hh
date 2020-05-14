@@ -26,7 +26,7 @@ public:
 	void unregisterDrive(DiskContainer& drive);
 
 private:
-	static const unsigned MAX_PARTITIONS = 31;
+	static constexpr unsigned MAX_PARTITIONS = 31;
 	struct DriveSettings
 	{
 		DiskContainer* drive;
@@ -45,7 +45,7 @@ private:
 
 	std::string getMachinePrefix() const;
 	Drives::iterator findDriveSettings(DiskContainer& drive);
-	Drives::iterator findDriveSettings(std::string_view name);
+	Drives::iterator findDriveSettings(std::string_view driveName);
 	DriveSettings& getDriveSettings(std::string_view diskname);
 	std::unique_ptr<DiskPartition> getPartition(
 		const DriveSettings& driveData);

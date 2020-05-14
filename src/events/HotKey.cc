@@ -74,6 +74,8 @@ HotKey::HotKey(RTScheduler& rtScheduler,
 	eventDistributor.registerEventListener(
 		OPENMSX_FOCUS_EVENT, *this, EventDistributor::HOTKEY);
 	eventDistributor.registerEventListener(
+		OPENMSX_FILEDROP_EVENT, *this, EventDistributor::HOTKEY);
+	eventDistributor.registerEventListener(
 		OPENMSX_OSD_CONTROL_RELEASE_EVENT, *this, EventDistributor::HOTKEY);
 	eventDistributor.registerEventListener(
 		OPENMSX_OSD_CONTROL_PRESS_EVENT, *this, EventDistributor::HOTKEY);
@@ -83,6 +85,7 @@ HotKey::~HotKey()
 {
 	eventDistributor.unregisterEventListener(OPENMSX_OSD_CONTROL_PRESS_EVENT, *this);
 	eventDistributor.unregisterEventListener(OPENMSX_OSD_CONTROL_RELEASE_EVENT, *this);
+	eventDistributor.unregisterEventListener(OPENMSX_FILEDROP_EVENT, *this);
 	eventDistributor.unregisterEventListener(OPENMSX_FOCUS_EVENT, *this);
 	eventDistributor.unregisterEventListener(OPENMSX_JOY_BUTTON_UP_EVENT, *this);
 	eventDistributor.unregisterEventListener(OPENMSX_JOY_BUTTON_DOWN_EVENT, *this);
@@ -453,9 +456,9 @@ void HotKey::startRepeat(const EventPtr& event)
 	// On android, because of the sensitivity of the touch screen it's
 	// very hard to have touches of short durations. So half a second is
 	// too short for the key-repeat-delay. A full second should be fine.
-	static const unsigned DELAY = PLATFORM_ANDROID ? 1000 : 500;
+	static constexpr unsigned DELAY = PLATFORM_ANDROID ? 1000 : 500;
 	// Repeat period.
-	static const unsigned PERIOD = 30;
+	static constexpr unsigned PERIOD = 30;
 
 	unsigned delay = (lastEvent ? PERIOD : DELAY) * 1000;
 	lastEvent = event;

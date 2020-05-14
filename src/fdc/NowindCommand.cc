@@ -9,6 +9,7 @@
 #include "FileOperations.hh"
 #include "CommandException.hh"
 #include "TclObject.hh"
+#include "one_of.hh"
 #include "span.hh"
 #include "unreachable.hh"
 #include <cassert>
@@ -145,20 +146,20 @@ void NowindCommand::execute(span<const TclObject> tokens, TclObject& result)
 
 		string_view arg = args.front().getString();
 		args = args.subspan(1);
-		if        ((arg == "--ctrl")    || (arg == "-c")) {
+		if        (arg == one_of("--ctrl", "-c")) {
 			enablePhantom  = false;
 			disablePhantom = true;
-		} else if ((arg == "--no-ctrl") || (arg == "-C")) {
+		} else if (arg == one_of("--no-ctrl", "-C")) {
 			enablePhantom  = true;
 			disablePhantom = false;
-		} else if ((arg == "--allow")    || (arg == "-a")) {
+		} else if (arg == one_of("--allow", "-a")) {
 			allowOther    = true;
 			disallowOther = false;
-		} else if ((arg == "--no-allow") || (arg == "-A")) {
+		} else if (arg == one_of("--no-allow", "-A")) {
 			allowOther    = false;
 			disallowOther = true;
 
-		} else if ((arg == "--romdisk") || (arg == "-j")) {
+		} else if (arg == one_of("--romdisk", "-j")) {
 			if (romdisk != 255) {
 				error = "Can only have one romdisk";
 			} else {
@@ -167,7 +168,7 @@ void NowindCommand::execute(span<const TclObject> tokens, TclObject& result)
 				changeDrives = true;
 			}
 
-		} else if ((arg == "--image") || (arg == "-i")) {
+		} else if (arg == one_of("--image", "-i")) {
 			if (args.empty()) {
 				error = strCat("Missing argument for option: ", arg);
 			} else {
@@ -176,7 +177,7 @@ void NowindCommand::execute(span<const TclObject> tokens, TclObject& result)
 				createDrive = true;
 			}
 
-		} else if ((arg == "--hdimage") || (arg == "-m")) {
+		} else if (arg == one_of("--hdimage", "-m")) {
 			if (args.empty()) {
 				error = strCat("Missing argument for option: ", arg);
 			} else {
@@ -322,14 +323,14 @@ string NowindCommand::help(const vector<string>& /*tokens*/) const
 	       "                            respectively.\n"
 	       "nowinda -m hdimage.dsk      Inserts a harddisk image. All available partitions\n"
 	       "                            will be mounted as drives.\n"
-               "nowinda -m hdimage.dsk:1    Inserts the first partition only.\n"
+	       "nowinda -m hdimage.dsk:1    Inserts the first partition only.\n"
 	       "nowinda -m hdimage.dsk:2-4  Inserts the 2nd, 3th and 4th partition as drive A:\n"
 	       "                            B: and C:.\n";
 }
 
 void NowindCommand::tabCompletion(vector<string>& tokens) const
 {
-	static const char* const extra[] = {
+	static constexpr const char* const extra[] = {
 		"-c", "--ctrl",
 		"-C", "--no-ctrl",
 		"-a", "--allow",

@@ -11,6 +11,7 @@
 #include "TclObject.hh"
 #include "CommandException.hh"
 #include "MemBuffer.hh"
+#include "one_of.hh"
 #include "ranges.hh"
 #include "stl.hh"
 #include "StringOp.hh"
@@ -35,7 +36,6 @@ Debugger::Debugger(MSXMotherBoard& motherBoard_)
 	, cmd(motherBoard.getCommandController(),
 	      motherBoard.getStateChangeDistributor(),
 	      motherBoard.getScheduler())
-	, cpu(nullptr)
 {
 }
 
@@ -144,7 +144,7 @@ void Debugger::removeProbeBreakPoint(string_view name)
 void Debugger::removeProbeBreakPoint(ProbeBreakPoint& bp)
 {
 	move_pop_back(probeBreakPoints, rfind_if_unguarded(probeBreakPoints,
-		[&](ProbeBreakPoints::value_type& v) { return v.get() == &bp; }));
+		[&](auto& v) { return v.get() == &bp; }));
 }
 
 unsigned Debugger::setWatchPoint(TclObject command, TclObject condition,
@@ -153,7 +153,7 @@ unsigned Debugger::setWatchPoint(TclObject command, TclObject condition,
                                  bool once, unsigned newId /*= -1*/)
 {
 	shared_ptr<WatchPoint> wp;
-	if ((type == WatchPoint::READ_IO) || (type == WatchPoint::WRITE_IO)) {
+	if (type == one_of(WatchPoint::READ_IO, WatchPoint::WRITE_IO)) {
 		wp = make_shared<WatchIO>(
 			motherBoard, type, beginAddr, endAddr,
 			command, condition, once, newId);
@@ -218,8 +218,7 @@ bool Debugger::Cmd::needRecord(span<const TclObject> tokens) const
 	// example would allow to set a callback that can execute arbitrary Tcl
 	// code. See comments in RecordedCommand for more details.
 	if (tokens.size() < 2) return false;
-	string_view subCmd = tokens[1].getString();
-	return (subCmd == "write") || (subCmd == "write_block");
+	return tokens[1].getString() == one_of("write", "write_block");
 }
 
 void Debugger::Cmd::execute(
@@ -355,10 +354,10 @@ void Debugger::Cmd::setBreakPoint(span<const TclObject> tokens, TclObject& resul
 	switch (arguments.size()) {
 	case 3: // command
 		command = arguments[2];
-		// fall-through
+		[[fallthrough]];
 	case 2: // condition
 		condition = arguments[1];
-		// fall-through
+		[[fallthrough]];
 	case 1: { // address
 		word addr = getAddress(getInterpreter(), arguments[0]);
 		BreakPoint bp(addr, command, condition, once);
@@ -442,10 +441,10 @@ void Debugger::Cmd::setWatchPoint(span<const TclObject> tokens, TclObject& resul
 	switch (arguments.size()) {
 	case 4: // command
 		command = arguments[3];
-		// fall-through
+		[[fallthrough]];
 	case 3: // condition
 		condition = arguments[2];
-		// fall-through
+		[[fallthrough]];
 	case 2: { // address + type
 		string_view typeStr = arguments[0].getString();
 		unsigned max;
@@ -570,7 +569,7 @@ void Debugger::Cmd::setCondition(span<const TclObject> tokens, TclObject& result
 	switch (arguments.size()) {
 	case 2: // command
 		command = arguments[1];
-		// fall-through
+		[[fallthrough]];
 	case 1: { // condition
 		condition = arguments[0];
 		DebugCondition dc(command, condition, once);
@@ -664,10 +663,10 @@ void Debugger::Cmd::probeSetBreakPoint(
 	switch (arguments.size()) {
 	case 3: // command
 		command = arguments[2];
-		// fall-through
+		[[fallthrough]];
 	case 2: // condition
 		condition = arguments[1];
-		// fall-through
+		[[fallthrough]];
 	case 1: { // probe
 		p = &debugger().getProbe(arguments[0].getString());
 		break;
@@ -962,15 +961,15 @@ vector<string> Debugger::Cmd::getConditionIds() const
 
 void Debugger::Cmd::tabCompletion(vector<string>& tokens) const
 {
-	static const char* const singleArgCmds[] = {
+	static constexpr const char* const singleArgCmds[] = {
 		"list", "step", "cont", "break", "breaked",
 		"list_bp", "list_watchpoints", "list_conditions",
 	};
-	static const char* const debuggableArgCmds[] = {
+	static constexpr const char* const debuggableArgCmds[] = {
 		"desc", "size", "read", "read_block",
 		"write", "write_block",
 	};
-	static const char* const otherCmds[] = {
+	static constexpr const char* const otherCmds[] = {
 		"disasm", "set_bp", "remove_bp", "set_watchpoint",
 		"remove_watchpoint", "set_condition", "remove_condition",
 		"probe",
@@ -996,13 +995,13 @@ void Debugger::Cmd::tabCompletion(vector<string>& tokens) const
 				// this one takes a cond id
 				completeString(tokens, getConditionIds());
 			} else if (tokens[1] == "set_watchpoint") {
-				static const char* const types[] = {
+				static constexpr const char* const types[] = {
 					"write_io", "write_mem",
 					"read_io", "read_mem",
 				};
 				completeString(tokens, types);
 			} else if (tokens[1] == "probe") {
-				static const char* const subCmds[] = {
+				static constexpr const char* const subCmds[] = {
 					"list", "desc", "read", "set_bp",
 					"remove_bp", "list_bp",
 				};
@@ -1012,8 +1011,7 @@ void Debugger::Cmd::tabCompletion(vector<string>& tokens) const
 		break;
 	case 4:
 		if ((tokens[1] == "probe") &&
-		    ((tokens[2] == "desc") || (tokens[2] == "read") ||
-		     (tokens[2] == "set_bp"))) {
+		    (tokens[2] == one_of("desc", "read", "set_bp"))) {
 			auto probeNames = to_vector(view::transform(
 				debugger().probes,
 				[](auto* p) { return p->getName(); }));
